@@ -17,7 +17,8 @@
 
             <p>{{album[0]}}</p>
             <form  method="POST" action="/viewAlbum">
-                <input type="submit" name = "albumName" value= '{{album[0]}}'/>
+                <input type="hidden" name="action" value="viewAlbum" />
+                <input type="submit" name = "album_id" value= '{{album[0]}}'/>
             </form> 
             <button class="delete"> Delete album</button>
 
@@ -52,8 +53,10 @@
 </form>
 
 
+<form action="/">
+    <input type="submit" value="Home" />
+</form>
 
 <ul>
     <li><a href='/logout'>Logout</a></li>
-    <li><a href='/'>Home</a></li>
 </ul>

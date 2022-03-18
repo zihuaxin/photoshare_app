@@ -201,20 +201,6 @@ def allowed_file(filename):
 @app.route('/upload', methods=['GET', 'POST'])
 @flask_login.login_required
 def upload_file():
-	if request.method == 'POST':
-		uid = getUserIdFromEmail(flask_login.current_user.id)
-		imgfile = request.files['photo']
-		caption = request.form.get('caption')
-		album_id = uid+nametoChar(request.form.get('ablum'))
-		photo_id = uid+nametoChar(caption) 
-		photo_data =imgfile.read()
-		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Photos (photo_id, caption, data, albums_id, user_id) VALUES (%s, %s, %s, %s, %s )''' ,(photo_id, caption, photo_data, album_id, uid))
-		conn.commit()
-		return render_template('profileOverview.html', photos = getUsersPhotos(uid) ,base64=base64)
-		#return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid),base64=base64)
-	#The method is GET so we return a  HTML form to upload the a photo.
-	else:
 		return render_template('upload.html')
 #end photo uploading code
 
@@ -244,7 +230,6 @@ def createAlbum():
 		cursor = conn.cursor()
 		cursor.execute('''INSERT INTO Albums (albums_id, name, date ,user_id) VALUES (%s, %s, %s, %s)''', (albums_id, name, Cdate , user_id))
 		conn.commit()
-		
 		return render_template('profileOverview.html', albums = getUsersAlbums(user_id ))
 	else:
 		return render_template('createAlbum.html')
@@ -253,10 +238,41 @@ def createAlbum():
 @app.route("/viewAlbum" , methods=['POST'])
 @flask_login.login_required
 def viewAlbum():
+	if request.method == 'POST':
 		user_id = getUserIdFromEmail(flask_login.current_user.id)
-		print(request.form['albumName'])
-		album_id = user_id+nametoChar(request.form['albumName'])
-		return render_template('viewAlbum.html', album = getAlbumPhotos(album_id), base64=base64, album_id = album_id) #	else:
+		print(request.form)
+		if request.form['action']=="viewAlbum":
+			print("view album")
+			album_id = user_id+nametoChar(request.form['album_id'])
+			albumName = request.form['album_id']
+			return render_template('viewAlbum.html', album = getAlbumPhotos(album_id), base64=base64, album_id = album_id, albumName = albumName) #	else:
+		elif request.form['action'] == "delete":
+			print("deleting photo")
+			photo_id = user_id+nametoChar(request.form['photo'])
+			cursor = conn.cursor()
+			cursor.execute('''DELETE FROM Photos WHERE photo_id = %s''', (photo_id))
+			conn.commit()
+			album_id = user_id+nametoChar(request.form['album_id'])
+			return render_template('viewAlbum.html', album = getAlbumPhotos(album_id), base64=base64, album_id = album_id)
+		elif request.form['action'] == 'upload':
+			imgfile = request.files['photo']
+			tags = request.form['tags'].split()
+			caption = request.form.get('caption')
+			album_id = user_id+nametoChar(request.form.get('ablum'))
+			photo_id = user_id+nametoChar(caption)
+			photo_data =imgfile.read()
+			cursor = conn.cursor()
+			cursor.execute('''INSERT INTO Photos (photo_id, caption, data, albums_id, user_id) VALUES (%s, %s, %s, %s, %s )''' ,(photo_id, caption, photo_data, album_id, user_id))
+			for x in tags:
+				tag_id = nametoChar(x)
+				cursor = conn.cursor()
+				if cursor.execute('''SELECT tag_id FROM Tags WHERE tag_id = %s''', (tag_id)) == 0:
+					cursor.execute('''INSERT INTO Tags (tag_id, name) VALUES (%s, %s)''',(tag_id, x))
+					conn.commit()
+				cursor.execute('''INSERT INTO Tagged (photo_id, tag_id) VALUE (%s, %s)''',(photo_id, tag_id))
+				conn.commit()
+			return render_template('viewAlbum.html', album = getAlbumPhotos(album_id), base64=base64, album_id = album_id) #	else:
+
 
 
 @app.route('/deletePhoto', methods=['POST'])

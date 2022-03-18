@@ -1,28 +1,26 @@
-<!-- author ben lawson (balawson@bu.edu) -->
-<div class="searchBar"> 
-    <form method="post" action="showphotosByTags">
-      <input type="text" placeholder="Search">
-      <input type="submit" name="searchTypeButton" value="Search By Tags" />
-      <input type="submit" name="searchTypeButton" value="Search By Comments" />
-    </form>
-  </div>
-  
-
 
 <head>
     <title>Upload a photo!</title>
 </head>
-    <body>
-        <div class="title">
-            <h1>Upload a photo to Photoshare</h1>
-        </div>
-            <form method="post" enctype="multipart/form-data" action="/upload">
-                <label for="photo">Select photo:</label>
-                <input type="file" name="photo" required='true' /><br />
-                <label for="caption">Please caption:</label>
-                <input type="text" name="caption" required='true' /><br />
-                <lable for="album" >Album name</lable>
-                <input type="text" name="ablum" required="true"/> <br />
-                <input type="submit" value="Upload" />
-            </form>
-    </body>
+<body>
+    <div class="title">
+        <h1>Upload a photo to Photoshare</h1>
+    </div>
+    <form method="post" enctype="multipart/form-data" action="/viewAlbum">
+        <input type="hidden" name="action" value="upload"/>
+        <label for="photo">Select photo:</label>
+        <input type="file" name="photo" required='true' /><br />
+        <label for="caption">Please caption:</label>
+        <input type="text" name="caption" required='true' /><br />
+        <lable for="album" >Album name:</lable>
+        <input type="text" name="ablum" required="true"/> <br />
+        <lable for="tags"> Tags:</lable>
+        <input type="text" name="tags" placeholder="Space between all tags "/> <br/>
+        <input type="submit" value="Upload" />
+    </form>
+</body>
+
+
+{% extends 'pagemenu.html' %}
+{% block content %}
+{%endblock %}
