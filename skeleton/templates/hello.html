@@ -1,7 +1,19 @@
 <!-- author ben lawson (balawson@bu.edu) -->
 <!doctype html>
-{% if message %}
-  <h4>{{message}}!</h4>
+
+
+
+
+<div class="searchBar"> 
+  <form method="post" action="showphotosByTags">
+    <input type="text" placeholder="Search">
+    <input type="submit" name="searchTypeButton" value="Search By Tags" />
+    <input type="submit" name="searchTypeButton" value="Search By Comments" />
+  </form>
+</div>
+
+{% if message == 'Logged out' %}
+  <h4>{{message}}! </h4>
 {% endif %}
 <title>Photoshare</title>
 {% if name %}
@@ -19,14 +31,27 @@
     </ul>
 {% endif %}
 
-{% if message is none %}
-  <p>You should <a href='/login'>login!</a></p>
+{% if message == 'Logged out' %}
+  <form action="/login">
+    <input type="submit" value="Login" />
+  </form>  
 {% else %}
-  <p> Go to <a href='/profile'>profile?</a></p>
+  <form action="/profileOverview">
+    <input type="submit" value="My profile Overview" />
+  </form>
+  <form action="/logout">
+    <input type="submit" value="Log Out" />
+  </form> 
+  <form action="/upload">
+    <input type="submit" value="Add photo"/>
+  </form>  
+  <form action="/createAlbum">
+    <input type="submit" value="Create Album" />
+  </form>
 {% endif %}
 
-<ul>
-<li><a href='/upload'>Upload a photo</a> </li>
-<li><a href='/logout'>Logout</a></li>
-<li><a href='/'>Home</a></li>
-</ul>
+<form action="/">
+  <input type="submit" value="Home" />
+</form>
+
+     

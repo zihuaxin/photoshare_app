@@ -1,0 +1,59 @@
+<!doctype html>
+  
+
+<h1> Your Album's</h1>
+
+<form method="post" >
+    <input type="submit" name="photosOralbums" value = "Show my Photos" />
+    <input type="submit" name="photosOralbums" value = "Show my Albums" />
+</form>
+
+
+{% if albums %}
+<h2>Here are your Albums</h2>
+    <ul>
+    {% for album in albums %}
+        <div class="album">
+
+            <p>{{album[0]}}</p>
+            <form  method="POST" action="/viewAlbum">
+                <input type="submit" name = "albumName" value= '{{album[0]}}'/>
+            </form> 
+            <button class="delete"> Delete album</button>
+
+        </div>
+        
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if photos %}
+<h2>Here are your photos</h2>
+    <ul>
+    {% for photo in photos %}
+
+        <li>{{photo[2]}}<br>
+        <li>{{photo[3]}}<br>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+<form action="/upload">
+    <input type="submit" value="Add photo"/>
+  </form> 
+<form action="/createAlbum">
+    <input type="submit" value="Create Album" />
+</form>
+<h1></h1>
+
+<form action="/editAlbum">
+    <input type="submit" value="Edit Album" />
+</form>
+
+
+
+<ul>
+    <li><a href='/logout'>Logout</a></li>
+    <li><a href='/'>Home</a></li>
+</ul>

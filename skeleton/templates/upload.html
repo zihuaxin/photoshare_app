@@ -1,4 +1,14 @@
 <!-- author ben lawson (balawson@bu.edu) -->
+<div class="searchBar"> 
+    <form method="post" action="showphotosByTags">
+      <input type="text" placeholder="Search">
+      <input type="submit" name="searchTypeButton" value="Search By Tags" />
+      <input type="submit" name="searchTypeButton" value="Search By Comments" />
+    </form>
+  </div>
+  
+
+
 <head>
     <title>Upload a photo!</title>
 </head>
@@ -11,6 +21,8 @@
                 <input type="file" name="photo" required='true' /><br />
                 <label for="caption">Please caption:</label>
                 <input type="text" name="caption" required='true' /><br />
+                <lable for="album" >Album name</lable>
+                <input type="text" name="ablum" required="true"/> <br />
                 <input type="submit" value="Upload" />
             </form>
     </body>

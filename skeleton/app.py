@@ -13,6 +13,7 @@ import flask
 from flask import Flask, Response, request, render_template, redirect, url_for
 from flaskext.mysql import MySQL
 import flask_login
+import datetime as date;
 
 #for image uploading
 import os, base64
@@ -23,7 +24,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'cs460'
+app.config['MYSQL_DATABASE_PASSWORD'] = '*YOUR INFO*'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -86,6 +87,7 @@ def login():
 				<input type='submit' name='submit'></input>
 			   </form></br>
 		   <a href='/'>Home</a>
+		   <a href='/albumOverview'>Your Alblums</a>
 			   '''
 	#The request method is POST (page is recieving data)
 	email = flask.request.form['email']
@@ -111,12 +113,25 @@ def logout():
 
 @login_manager.unauthorized_handler
 def unauthorized_handler():
-	return render_template('unauth.html')
+	return render_template('unauth.html') 
 
 #you can specify specific methods (GET/POST) in function header instead of inside the functions as seen earlier
 @app.route("/register", methods=['GET'])
 def register():
 	return render_template('register.html', supress='True')
+
+
+@app.route("/showphotosByTags", methods=['GET', 'POST'])
+def showphotos():
+	if(request.method == 'POST'):
+		if request.form['searchTypeButton'] == 'Search By Tags':
+			#get photos by tag value
+			return render_template('hello.html', photos="PLACEHOLDER")
+		elif request.form['searchTypeButton'] == 'Search By Comments':
+			#get photos by comments
+			return render_template('hello.html', photos="PLACEHOLDER")
+
+
 
 @app.route("/register", methods=['POST'])
 def register_user():
@@ -142,8 +157,20 @@ def register_user():
 
 def getUsersPhotos(uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE user_id = '{0}'".format(uid))
+	cursor.execute("SELECT data, photo_id, caption FROM Photos WHERE user_id = '{0}'".format(uid))
 	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
+
+
+def getUsersAlbums(uid):
+	curosr = conn.cursor()
+	cursor.execute("SELECT name FROM Albums WHERE user_id = '{0}'".format(uid))
+	return cursor.fetchall()
+
+
+def getAlbumPhotos(album_id):
+	curosr = conn.cursor()
+	cursor.execute("SELECT data, photo_id, caption FROM Photos WHERE albums_id = '{0}'".format(album_id))
+	return cursor.fetchall()
 
 def getUserIdFromEmail(email):
 	cursor = conn.cursor()
@@ -178,22 +205,82 @@ def upload_file():
 		uid = getUserIdFromEmail(flask_login.current_user.id)
 		imgfile = request.files['photo']
 		caption = request.form.get('caption')
+		album_id = uid+nametoChar(request.form.get('ablum'))
+		photo_id = uid+nametoChar(caption) 
 		photo_data =imgfile.read()
 		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Pictures (imgdata, user_id, caption) VALUES (%s, %s, %s )''' ,(photo_data,uid, caption))
+		cursor.execute('''INSERT INTO Photos (photo_id, caption, data, albums_id, user_id) VALUES (%s, %s, %s, %s, %s )''' ,(photo_id, caption, photo_data, album_id, uid))
 		conn.commit()
-		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid),base64=base64)
+		return render_template('profileOverview.html', photos = getUsersPhotos(uid) ,base64=base64)
+		#return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid),base64=base64)
 	#The method is GET so we return a  HTML form to upload the a photo.
 	else:
 		return render_template('upload.html')
 #end photo uploading code
 
+@app.route('/profileOverview', methods=['GET', 'POST'])
+@flask_login.login_required
+def ablumOverview():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	if request.method == 'POST':
+		if request.form['photosOralbums'] == 'Show my Photos':
+			return render_template('profileOverview.html', photos = getUsersPhotos(uid),base64=base64  )
+		elif request.form['photosOralbums'] == 'Show my Albums':
+			albums = getUsersAlbums(uid)
+			return render_template('profileOverview.html', albums = albums , base64=base64 )
+	else:	
+		return render_template('profileOverview.html', albums = getUsersAlbums(uid), base64=base64 )
+	#get list of albums
+
+@app.route('/createAlbum', methods=['GET', 'POST'])
+@flask_login.login_required
+def createAlbum():
+	if request.method == 'POST':
+		#set logice to see if name is already in the database
+		Cdate = date.datetime.now()
+		name = request.form.get('title')
+		user_id = getUserIdFromEmail(flask_login.current_user.id)
+		albums_id = user_id + nametoChar(name)
+		cursor = conn.cursor()
+		cursor.execute('''INSERT INTO Albums (albums_id, name, date ,user_id) VALUES (%s, %s, %s, %s)''', (albums_id, name, Cdate , user_id))
+		conn.commit()
+		
+		return render_template('profileOverview.html', albums = getUsersAlbums(user_id ))
+	else:
+		return render_template('createAlbum.html')
+		#create new album id 
+
+@app.route("/viewAlbum" , methods=['POST'])
+@flask_login.login_required
+def viewAlbum():
+		user_id = getUserIdFromEmail(flask_login.current_user.id)
+		print(request.form['albumName'])
+		album_id = user_id+nametoChar(request.form['albumName'])
+		return render_template('viewAlbum.html', album = getAlbumPhotos(album_id), base64=base64, album_id = album_id) #	else:
+
+
+@app.route('/deletePhoto', methods=['POST'])
+@flask_login.login_required
+def deletePhoto():
+	user_id = getUserIdFromEmail(flask_login.current_user.id)
+	photo_id = user_id+nametoChar(request.form['photo'])
+	album_id = request.form['album_id']
+	cursor = conn.cursor()
+	cursor.execute('''DELETE FROM Photos WHERE photo_id = %s''', (photo_id))
+	return render_template('viewAlbum.html', album = getAlbumPhotos(album_id), base64=base64)
+	
 
 #default page
 @app.route("/", methods=['GET'])
 def hello():
-	return render_template('hello.html', message='Welecome to Photoshare')
+	return render_template('hello.html', message='Welecome to Photoshare') 
+	#get list of photos
 
+def nametoChar(name):
+	char = 0
+	for x in name:
+		char += ord(x)
+	return char
 
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run
