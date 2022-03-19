@@ -1,12 +1,19 @@
 <!doctype html>
   
+  
 
-<h1> Your Album's</h1>
+<h1> Your Profile</h1>
 
 <form method="post" >
     <input type="submit" name="photosOralbums" value = "Show my Photos" />
-    <input type="submit" name="photosOralbums" value = "Show my Albums" />
+    <input type="hidden" name="action" value = "showPhotos" />
 </form>
+
+<form method="post" >
+    <input type="submit" name="photosOralbums" value = "Show my Albums" />
+    <input type="hidden" name="action" value = "showAlbums" />
+</form>
+
 
 
 {% if albums %}
@@ -20,7 +27,12 @@
                 <input type="hidden" name="action" value="viewAlbum" />
                 <input type="submit" name = "album_id" value= '{{album[0]}}'/>
             </form> 
-            <button class="delete"> Delete album</button>
+            <form method="POST" action="/profileOverview">
+                <input type="hidden" name="action" value="deleteAlbum"/>
+                <input type="submit" name="button" value="Delete Album"/>
+                <input type="hidden" name = "album_id" value= '{{album[0]}}'/>
+            </form>
+
 
         </div>
         
@@ -34,8 +46,13 @@
     {% for photo in photos %}
 
         <li>{{photo[2]}}<br>
-        <li>{{photo[3]}}<br>
         <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+        <form method="POST" >
+            <input type="hidden" name="action" value="deletePhoto"/>
+            <input type="hidden" name = "photoCaption" value = '{{photo[2]}}'/>
+            <input type="submit" value="Delete Photo" name = "delete" />
+        </form>    
+
     {% endfor %}
     </ul>
 {% endif %}
@@ -48,15 +65,6 @@
 </form>
 <h1></h1>
 
-<form action="/editAlbum">
-    <input type="submit" value="Edit Album" />
-</form>
-
-
-<form action="/">
-    <input type="submit" value="Home" />
-</form>
-
-<ul>
-    <li><a href='/logout'>Logout</a></li>
-</ul>
+{% extends 'pagemenu.html' %}
+{% block content %}
+{%endblock %}
