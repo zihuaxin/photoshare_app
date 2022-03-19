@@ -207,16 +207,30 @@ def upload_file():
 @app.route('/profileOverview', methods=['GET', 'POST'])
 @flask_login.login_required
 def ablumOverview():
-	uid = getUserIdFromEmail(flask_login.current_user.id)
+	user_id = getUserIdFromEmail(flask_login.current_user.id)
 	if request.method == 'POST':
-		if request.form['photosOralbums'] == 'Show my Photos':
-			return render_template('profileOverview.html', photos = getUsersPhotos(uid),base64=base64  )
-		elif request.form['photosOralbums'] == 'Show my Albums':
-			albums = getUsersAlbums(uid)
+		if request.form['action'] == 'showPhotos':
+			return render_template('profileOverview.html', photos = getUsersPhotos(user_id),base64=base64  )
+		elif request.form['action'] == 'showAlbums':
+			albums = getUsersAlbums(user_id)
 			return render_template('profileOverview.html', albums = albums , base64=base64 )
+		elif request.form['action'] == 'deleteAlbum':
+			#user_id = getUserIdFromEmail(flask_login.current_user.id)
+			album_id = user_id+ nametoChar(request.form['album_id'])
+			cursor = conn.cursor()
+			cursor.execute("DELETE FROM Albums WHERE albums_id = %s", (album_id))
+			conn.commit()
+			return render_template('profileOverview.html', albums = getUsersAlbums(user_id), base64=base64 )
+		elif request.form['action'] == 'deletePhoto':
+			photo_id = user_id+ nametoChar(request.form['photoCaption'])
+			cursor = conn.cursor()
+			cursor.execute("DELETE FROM Tagged WHERE photo_id = %s", (photo_id))
+			conn.commit()
+			cursor.execute("DELETE FROM Photos WHERE photo_id = %s", (photo_id))
+			conn.commit()
+			return render_template('profileOverview.html', photos = getUsersPhotos(user_id),base64=base64  )
 	else:	
-		return render_template('profileOverview.html', albums = getUsersAlbums(uid), base64=base64 )
-	#get list of albums
+		return render_template('profileOverview.html', albums = getUsersAlbums(user_id), base64=base64 )
 
 @app.route('/createAlbum', methods=['GET', 'POST'])
 @flask_login.login_required
@@ -250,6 +264,8 @@ def viewAlbum():
 			print("deleting photo")
 			photo_id = user_id+nametoChar(request.form['photo'])
 			cursor = conn.cursor()
+			cursor.execute('''DELETE FROM Tagged WHERE photo_id = %s''', (photo_id))
+			conn.commit()
 			cursor.execute('''DELETE FROM Photos WHERE photo_id = %s''', (photo_id))
 			conn.commit()
 			album_id = user_id+nametoChar(request.form['album_id'])
@@ -263,6 +279,7 @@ def viewAlbum():
 			photo_data =imgfile.read()
 			cursor = conn.cursor()
 			cursor.execute('''INSERT INTO Photos (photo_id, caption, data, albums_id, user_id) VALUES (%s, %s, %s, %s, %s )''' ,(photo_id, caption, photo_data, album_id, user_id))
+			conn.commit()
 			for x in tags:
 				tag_id = nametoChar(x)
 				cursor = conn.cursor()
@@ -272,7 +289,6 @@ def viewAlbum():
 				cursor.execute('''INSERT INTO Tagged (photo_id, tag_id) VALUE (%s, %s)''',(photo_id, tag_id))
 				conn.commit()
 			return render_template('viewAlbum.html', album = getAlbumPhotos(album_id), base64=base64, album_id = album_id) #	else:
-
 
 
 @app.route('/deletePhoto', methods=['POST'])
