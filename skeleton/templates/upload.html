@@ -12,6 +12,9 @@
         <input type="file" name="photo" required='true' /><br />
         <label for="caption">Please caption:</label>
         <input type="text" name="caption" required='true' /><br />
+        {% if  album %}
+        <input type="text" name="ablum" required="true" value ="{{album}}"/> <br />
+        
         <lable for="album" >Album name:</lable>
         <input type="text" name="ablum" required="true"/> <br />
         <lable for="tags"> Tags:</lable>

@@ -24,7 +24,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'sr24mesjw!'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'SR24mesjw!'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -166,6 +166,12 @@ def getUsersAlbums(uid):
 	cursor.execute("SELECT name FROM Albums WHERE user_id = '{0}'".format(uid))
 	return cursor.fetchall()
 
+def getPhotosbyComments(comment):
+	curosr = conn.cursor()
+	cursor.execute("SELECT * FROM Photos, Comments WHERE Comments.text = '{0}' AND Photos.photo_id = Comments.photo_id".format(comment))
+	return cursor.fetchall()
+
+
 
 def getAlbumPhotos(album_id):
 	curosr = conn.cursor()
@@ -303,9 +309,21 @@ def deletePhoto():
 	
 
 #default page
-@app.route("/", methods=['GET'])
+@app.route("/", methods=['GET', 'POST'])
 def hello():
-	return render_template('hello.html', message='Welecome to Photoshare') 
+	if request.methods =='POST':
+		if request.form['action'] == "photosearch":
+			if request.form['searchTypeButton'] == "Search By Tags":
+			
+			
+				return render_template('hello.html', photos = get) 
+
+			elif request.form['searchTypeButton'] == "Search By Comments":
+				
+				return render_template('hello.html', photos = getPhotosbyComments(comment) ) 
+
+	else:	
+		return render_template('hello.html', message='Welecome to Photoshare') 
 	#get list of photos
 
 def nametoChar(name):
