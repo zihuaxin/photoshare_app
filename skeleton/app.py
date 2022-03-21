@@ -38,6 +38,9 @@ cursor = conn.cursor()
 cursor.execute("SELECT email from Users")
 users = cursor.fetchall()
 
+def getUnregisteredUserId():
+	return -1
+
 def getUserList():
 	cursor = conn.cursor()
 	cursor.execute("SELECT email from Users")
@@ -76,6 +79,93 @@ A new page looks like this:
 def new_page_function():
 	return new_page_html
 '''
+
+@app.route('/viewSinglePhoto', methods=['GET','POST'])
+def viewSinglePhoto():
+
+	photo_id = request.args.get('photo_id', None)
+
+	# get photo data and likes for the page
+	cursor = conn.cursor()
+	cursor.execute(
+		'''
+		SELECT caption, data
+		FROM Photos
+		WHERE Photos.photo_id = {}
+		'''.format(photo_id)
+	)
+	photo_data = cursor.fetchone()
+	photo_data = base64.b64encode(photo_data).decode("ascii")
+
+	# getting comments
+	cursor = conn.cursor()
+	cursor.execute(
+		'''
+		SELECT C.text
+		FROM Users U, Comments C
+		WHERE U.user_id = C.user_id AND C.photo_id = {}
+		'''.format(photo_id)
+	)
+	comments = cursor.fetchall()
+
+	# getting number of likes
+	cursor.execute(
+		'''
+		SELECT COUNT(*)
+		FROM Likes
+		WHERE Likes.photo_id = {}
+		'''.format(photo_id)
+	)
+	n_likes = int(cursor.fetchone()[0])
+
+	# getting users who liked
+	cursor.execute(
+		'''
+		SELECT U.first_name, U.last_name
+		FROM Users U, Likes L
+		WHERE U.user_id = L.user_id
+		'''
+	)
+	user_list = cursor.fetchall()
+	names = ['{} {}'.format(name[0], name[1]) for name in user_list]
+	user_str = ', '.join(names)
+
+	# user likes a page
+	if flask.request.method == 'POST':
+
+		if flask_login.current_user.is_authenticated:
+			user_id = getUserIdFromEmail(flask_login.current_user.id)
+		else:
+			user_id = getUnregisteredUserId()
+
+		if flask.request.form['like']:
+			cursor = conn.cursor()
+			cursor.execute(
+				'''
+					INSERT 
+					INTO Likes(photo_id,user_id)
+					VALUES ({}, {})
+				'''.format(photo_id, user_id)
+			)
+			conn.commit()
+		else:
+			cursor = conn.cursor()
+			cursor.execute(
+				'''
+					INSERT
+					INTO Comments(user_id, photo_id, text, date)
+					VALUES ({}, {}, {}, CURRENT_DATE())
+				'''.format(user_id, photo_id, flask.requests.form['text'])
+			)
+
+	return render_template(
+		'viewSinglePhoto.html',
+		caption=photo_data[0],
+		photo=photo_data[1], 
+		n_likes=n_likes, 
+		user_str=user_str,
+		comments=comments
+	)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
