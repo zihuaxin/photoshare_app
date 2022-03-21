@@ -5,7 +5,7 @@
 
 
 <div class="searchBar"> 
-  <form method="post" action="/hello">
+  <form method="post" action="/">
     <input type="hidden" name="action" value="photosearch" />
     <input type="text" placeholder="Search" name="text" />
     <input type="submit" name="searchTypeButton" value="Search By Tags" />
@@ -26,8 +26,8 @@
     <ul>
     {% for photo in photos %}
 
-        <li>{{photo[2]}}<br>
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+        <li>{{photo[1]}}<br>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[2]).decode("ascii") }}'/></li>
     {% endfor %}
     </ul>
 {% endif %}

@@ -24,7 +24,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'SR24mesjw!'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'sr24mesjw!'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -265,10 +265,23 @@ def getPhotosbyComments(comment):
 def getPhotosbyTags(tags):
 	tag = tags.split()
 	arr = []
+	# cursor = conn.cursor()
+	# cursor.execute("SELECT * FROM Tagged")
+	# print(cursor.fetchall())
 	for x in tag:
+		dict = {}
+		tag_id = getTagId(x)
+		# print(x, tag_id)
 		cursor = conn.cursor()
-		cursor.execute("SELECT * FROM Photos, Tags WHERE Tags.name = '{0}' AND Photos.photo_id = Comments.photo_id".format(tags))
-		arr.append(cursor.fetchall())
+		cursor.execute("SELECT Photos.* FROM Tagged, Photos WHERE tag_id = '{0}' AND Tagged.photo_id = Photos.photo_id".format(tag_id))
+		temp = cursor.fetchall()
+		for i in temp:
+			dict[i[0]] = i
+		arr.append(dict)
+	
+	
+
+
 
 
 def getAlbumPhotos(album_id):
@@ -313,6 +326,10 @@ def deletePhoto(data , caption):
 	cursor.execute('''DELETE FROM Photos WHERE photo_id = %s''', (photo_id))
 	conn.commit()
 
+def getTagId(name):
+	cursor = conn.cursor()
+	cursor.execute("SELECT tag_id FROM Tags WHERE name = '{0}'".format(name))
+	return cursor.fetchone()[0]
 
 def isEmailUnique(email):
 	#use this to check if a email has already been registered
@@ -358,10 +375,12 @@ def getUsersPhotos(uid):
 	cursor.execute("SELECT * FROM Photos WHERE user_id = '{0}'".format(uid))
 	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
 
+
+
+
 @app.route('/upload', methods=['GET', 'POST'])
 @flask_login.login_required
 def upload():
-	print("help")
 	if request.method == 'POST':
 		user_id = getUserIdFromEmail(flask_login.current_user.id)
 		imgfile = request.files['photo']
@@ -372,10 +391,18 @@ def upload():
 		cursor = conn.cursor()
 		cursor.execute('''INSERT INTO Photos (caption, data, albums_id, user_id) VALUES ( %s, %s, %s, %s )''' ,(caption, photo_data, album_id, user_id))
 		conn.commit()
-		photo_id = getPhotosbyComments(caption)
+		photo_id = getPhoto_id(caption)
 		tags = request.form['tags'].split()
-		userPhotos = getUsersPhotos(user_id)
-		return redirect(url_for('profileOverview' , photos = userPhotos, base64 = base64, )
+		for x in tags:
+			cursor = conn.cursor()
+			if cursor.execute('''SELECT name FROM Tags WHERE name = %s''', (x)) == 0: #tag not in table yet
+				cursor = conn.cursor()
+				cursor.execute('''INSERT INTO Tags (name) VALUES (%s)''',(x))
+				conn.commit()
+			tag_id = getTagId(x)
+			cursor.execute('''INSERT INTO Tagged (photo_id, tag_id) VALUES (%s, %s)''',(photo_id, tag_id))
+			conn.commit()
+		return redirect(url_for('profileOverview'))
 	else:	
 		return render_template('upload.html')
 #end photo uploading code
@@ -433,22 +460,7 @@ def viewAlbum():
 		if request.form['action'] == "delete":
 			photo_id = request.form['photo']
 			deletePhotos(photo_id)
-			return render_template('viewAlbum.html', album = getAlbumPhotos(album_id), base64=base64, album_id = album_id)
-		elif request.form['action'] == 'upload':
-			imgfile = request.files['photo']
-			caption = request.form.get('caption')
-			photo_data =imgfile.read()
-			cursor.execute('''INSERT INTO Photos ( caption, data, albums_id, user_id) VALUES ( %s, %s, %s, %s )''' ,( caption, photo_data, album_id, user_id))
-			conn.commit()
-			# tags = request.form['tags'].split()
-			# for x in tags:
-			# 	cursor = conn.cursor()
-			# 	# if cursor.execute('''SELECT tag_id FROM Tags WHERE tag_id = %s''', (tag_id)) == 0:
-			# 	cursor.execute('''INSERT INTO Tags (tag_id, name) VALUES (%s)''',( x))
-			# 	conn.commit()
-			# 	cursor.execute('''INSERT INTO Tagged (photo_id, tag_id) VALUE (%s, %s)''',(photo_id, tag_id))
-			# 	conn.commit()
-			return render_template('viewAlbum.html', album = getAlbumPhotos(album_id), base64=base64, album_id = album_id) #	else:
+			return render_template('viewAlbum.html', album = getAlbumPhotos(album_id), base64=base64, album_id = album_id)		
 		else:
 			# album_id = getAlbum_IdFromName(albumName)
 			return render_template('viewAlbum.html',  album = getAlbumPhotos(album_id), base64=base64, album_id = album_id )
@@ -457,27 +469,33 @@ def viewAlbum():
 		return	render_template('viewAlbum.html',  album = getAlbumPhotos(album_id), base64=base64, album_id = album_id )
 
 
-@app.route('/viewAlbum', methods=['GET'])
+@app.route('/viewAlbum/<albumName>', methods=['GET'])
 @flask_login.login_required
 def viewAlbumGet():
 	args = request.args
-	album_id = getAlbum_IdFromName(args.get("albumName"))
-	return	render_template('viewAlbum.html',  album = getAlbumPhotos(album_id), base64=base64, album_id = album_id )
+	albumName = args.get('albumName')
+	album_id = getAlbum_IdFromName(albumName)
+	return	render_template('viewAlbum.html', albumName=args.get('albumName'), album = getAlbumPhotos(album_id), base64=base64 )
 
 
-#default page
-@app.route("/", methods=['GET'])
-def hello():
+@app.route("/", methods=[ "POST"])
+def searchfunction():
 	if request.form['action'] == "photosearch":
 		if request.form['searchTypeButton'] == "Search By Tags":
-				
-			
-			return render_template('hello.html', photos = getPhotosbyTags(request.form['text']), base64 = base64) 
+			tags = request.form['text']
+		
+			photos = getPhotosbyTags(tags)
+			return render_template('hello.html')
 		elif request.form['searchTypeButton'] == "Search By Comments":
-			
-			return render_template('hello.html', photos = getPhotosbyComments(request.form["text"]), base64 = base64 ) 
+			comments = request.form['comments']
+			photos = getPhotosbyComments(comments)
+			return render_template('hello.html', photos = photos)
+	else:
+		return render_template('hello.html', message='Welecome to Photoshare') 
 
-	else:	
+#default page
+@app.route("/")
+def hello():
 		return render_template('hello.html', message='Welecome to Photoshare') 
 	#get list of photos
 
