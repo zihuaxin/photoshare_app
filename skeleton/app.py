@@ -24,7 +24,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'sr24mesjw!'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'SR24mesjw!'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -251,6 +251,12 @@ def getUsersAlbums(uid):
 	cursor.execute("SELECT * FROM Albums WHERE user_id ='{0}'".format(uid))
 	return cursor.fetchall()
 
+def getPhoto_id(caption):
+	user_id = getUserIdFromEmail(flask_login.current_user.id)
+	cursor = conn.cursor()
+	cursor.execute("SELECT photo_id FROM Photos WHERE caption = '{0}' AND user_id = '{1}'".format(caption, user_id))
+	return cursor.fetchone()[0]
+
 def getPhotosbyComments(comment):
 	cursor = conn.cursor()
 	cursor.execute("SELECT * FROM Photos, Comments WHERE Comments.text = '{0}' AND Photos.photo_id = Comments.photo_id".format(comment))
@@ -260,13 +266,14 @@ def getPhotosbyTags(tags):
 	tag = tags.split()
 	arr = []
 	for x in tag:
-		curosr = conn.cursor()
-		cursor.execute("SELECT * FROM Photos, Tags WHERE Comments.text = '{0}' AND Photos.photo_id = Comments.photo_id".format(tags))
-	return cursor.fetchall()
+		cursor = conn.cursor()
+		cursor.execute("SELECT * FROM Photos, Tags WHERE Tags.name = '{0}' AND Photos.photo_id = Comments.photo_id".format(tags))
+		arr.append(cursor.fetchall())
+
 
 def getAlbumPhotos(album_id):
 	cursor = conn.cursor()
-	cursor.execute("SELECT data, photo_id, caption FROM Photos WHERE albums_id = '{0}'".format(album_id))
+	cursor.execute("SELECT * FROM Photos WHERE albums_id = '{0}'".format(album_id))
 	return cursor.fetchall()
 
 def getUserIdFromEmail(email):
@@ -278,7 +285,7 @@ def getAlbum_IdFromName(name):
 	user_id = getUserIdFromEmail(flask_login.current_user.id)
 	cursor = conn.cursor()
 	cursor.execute("SELECT albums_id FROM Albums WHERE user_id = %s AND name = %s",(user_id, name))
-	return cursor.fetchone()[0]
+	return cursor.fetchone()#[0]
 
 def deleteAlbum(albumName):
 	user_id = getUserIdFromEmail(flask_login.current_user.id)
@@ -360,31 +367,20 @@ def upload():
 		imgfile = request.files['photo']
 		caption = request.form['caption']
 		albumName = request.form['albumName']
-		# if(isAlbumReal(albumName)):
 		album_id = getAlbum_IdFromName(albumName)
-		print(album_id[0])
 		photo_data = imgfile.read()
 		cursor = conn.cursor()
 		cursor.execute('''INSERT INTO Photos (caption, data, albums_id, user_id) VALUES ( %s, %s, %s, %s )''' ,(caption, photo_data, album_id, user_id))
 		conn.commit()
-		return redirect(url_for('profileOverview', photos = getUsersPhotos(user_id), base64=base64 ))
-		#return render_template('profileOverview.html', photos = getUsersPhotos(user_id),base64=base64  )
-
-		# 	return render_template('profileOverview.html', photos = getUsersPhotos(user_id),base64=base64  )
-		# else:
-		# 	print("Album not created")
-		# 	return flask.redirect(flask.url_for('upload'))
-		# tags = request.form['tags'].split()
-		# for x in tags:
-		# 	cursor = conn.cursor()
-		# 	if cursor.execute('''SELECT name FROM Tags WHERE name = %s''', (x)) == 0:
-		# 		cursor.execute('''INSERT INTO Tags (tag_id, name) VALUES (%s)''',(x))
-		# 	conn.commit()
-		# 	cursor.execute('''INSERT INTO Tagged (photo_id, tag_id) VALUE (%s, %s)''',(photo_id, tag_id))
-		# 	conn.commit()
-	else:
+		photo_id = getPhotosbyComments(caption)
+		tags = request.form['tags'].split()
+		userPhotos = getUsersPhotos(user_id)
+		return redirect(url_for('profileOverview' , photos = userPhotos, base64 = base64, )
+	else:	
 		return render_template('upload.html')
 #end photo uploading code
+
+
 
 @app.route('/profileOverview', methods=['GET', 'POST'])
 @flask_login.login_required
@@ -434,11 +430,8 @@ def viewAlbum():
 	album_id = getAlbum_IdFromName(request.form['albumName'])
 	if request.method == 'POST':
 		user_id = getUserIdFromEmail(flask_login.current_user.id)
-		print(request.form)
-		#if request.form['action']=="viewAlbum":
-		# 	return render_template(('viewAlbum/.html',), album = getAlbumPhotos(album_id), base64=base64, album_id = album_id ) #	else:
 		if request.form['action'] == "delete":
-			photo_id = request.form['photo_id']
+			photo_id = request.form['photo']
 			deletePhotos(photo_id)
 			return render_template('viewAlbum.html', album = getAlbumPhotos(album_id), base64=base64, album_id = album_id)
 		elif request.form['action'] == 'upload':
@@ -464,28 +457,27 @@ def viewAlbum():
 		return	render_template('viewAlbum.html',  album = getAlbumPhotos(album_id), base64=base64, album_id = album_id )
 
 
-@app.route('/viewAlbum/<albumName>', methods=['GET'])
+@app.route('/viewAlbum', methods=['GET'])
 @flask_login.login_required
-def viewAlbumGet(albumName):
-	album_id = getAlbum_IdFromName(albumName)
+def viewAlbumGet():
+	args = request.args
+	album_id = getAlbum_IdFromName(args.get("albumName"))
 	return	render_template('viewAlbum.html',  album = getAlbumPhotos(album_id), base64=base64, album_id = album_id )
 
 
 #default page
-@app.route("/", methods=['GET', 'POST'])
+@app.route("/", methods=['GET'])
 def hello():
-	# if request.methods =='POST':
-	# 	if request.form['action'] == "photosearch":
-	# 		if request.form['searchTypeButton'] == "Search By Tags":
+	if request.form['action'] == "photosearch":
+		if request.form['searchTypeButton'] == "Search By Tags":
 				
 			
-	# 			return render_template('hello.html', photos = getPhotosbyTags(request.form['text']), base64 = base64) 
+			return render_template('hello.html', photos = getPhotosbyTags(request.form['text']), base64 = base64) 
+		elif request.form['searchTypeButton'] == "Search By Comments":
+			
+			return render_template('hello.html', photos = getPhotosbyComments(request.form["text"]), base64 = base64 ) 
 
-	# 		elif request.form['searchTypeButton'] == "Search By Comments":
-				
-	# 			return render_template('hello.html', photos = getPhotosbyComments(request.form["text"]), base64 = base64 ) 
-
-	# else:	
+	else:	
 		return render_template('hello.html', message='Welecome to Photoshare') 
 	#get list of photos
 
