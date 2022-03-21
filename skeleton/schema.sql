@@ -25,7 +25,7 @@ CREATE TABLE Users(
 );
 
 CREATE TABLE Albums(
- albums_id INTEGER,
+ albums_id INTEGER AUTO_INCREMENT,
  name VARCHAR(100),
  date DATE,
  user_id INTEGER NOT NULL,
@@ -35,13 +35,13 @@ CREATE TABLE Albums(
 );
 
 CREATE TABLE Tags(
- tag_id INTEGER,
+ tag_id INTEGER AUTO_INCREMENT,
  name VARCHAR(100),
  PRIMARY KEY (tag_id)
 );
 
 CREATE TABLE Photos(
- photo_id INTEGER,
+ photo_id INTEGER AUTO_INCREMENT,
  caption VARCHAR(100),
  data LONGBLOB,
  albums_id INTEGER NOT NULL,
@@ -62,7 +62,7 @@ CREATE TABLE Tagged(
 );
 
 CREATE TABLE Comments(
- comment_id INTEGER,
+ comment_id INTEGER AUTO_INCREMENT,
  user_id INTEGER NOT NULL,
  photo_id INTEGER NOT NULL,
  text VARCHAR (100),

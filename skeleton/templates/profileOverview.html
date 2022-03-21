@@ -22,15 +22,15 @@
     {% for album in albums %}
         <div class="album">
 
-            <p>{{album[0]}}</p>
-            <form  method="POST" action="/viewAlbum">
-                <input type="hidden" name="action" value="viewAlbum" />
-                <input type="submit" name = "album_id" value= '{{album[0]}}'/>
+            <p>Album {{album[1]}} </p>
+            <form  method="GET" action="/viewAlbum">
+                <input type="submit" value="Look in Album" />
+                <input type="hidden" name="albumName" value="{{album[1]}}" />
             </form> 
             <form method="POST" action="/profileOverview">
                 <input type="hidden" name="action" value="deleteAlbum"/>
                 <input type="submit" name="button" value="Delete Album"/>
-                <input type="hidden" name = "album_id" value= '{{album[0]}}'/>
+                <input type="hidden" name = "albumName" value= '{{album[1]}}'/>
             </form>
 
 
@@ -45,11 +45,11 @@
     <ul>
     {% for photo in photos %}
 
-        <li>{{photo[2]}}<br>
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
-        <form method="POST" >
+        <li>{{photo[1]}}<br>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[2]).decode("ascii") }}'/></li>
+        <form method="POST"  >
             <input type="hidden" name="action" value="deletePhoto"/>
-            <input type="hidden" name = "photoCaption" value = '{{photo[2]}}'/>
+            <input type="hidden" name ="photo_id" value = '{{photo[0]}}'/>
             <input type="submit" value="Delete Photo" name = "delete" />
         </form>    
 

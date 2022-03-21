@@ -6,17 +6,14 @@
     <div class="title">
         <h1>Upload a photo to Photoshare</h1>
     </div>
-    <form method="post" enctype="multipart/form-data" action="/viewAlbum">
+    <form method="POST" enctype="multipart/form-data" >
         <input type="hidden" name="action" value="upload"/>
         <label for="photo">Select photo:</label>
         <input type="file" name="photo" required='true' /><br />
         <label for="caption">Please caption:</label>
         <input type="text" name="caption" required='true' /><br />
-        {% if  album %}
-        <input type="text" name="ablum" required="true" value ="{{album}}"/> <br />
-        
-        <lable for="album" >Album name:</lable>
-        <input type="text" name="ablum" required="true"/> <br />
+        <lable for="albumName" >Album name:</lable>
+        <input type="text" name="albumName" required="true"/> <br />
         <lable for="tags"> Tags:</lable>
         <input type="text" name="tags" placeholder="Space between all tags "/> <br/>
         <input type="submit" value="Upload" />
@@ -26,4 +23,4 @@
 
 {% extends 'pagemenu.html' %}
 {% block content %}
-{%endblock %}
+{% endblock %}
