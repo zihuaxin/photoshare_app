@@ -414,6 +414,17 @@ def getAllAlbums():
 
 def getLeaderboard():
 	cursor = conn.cursor()
+	cursor.execute(
+		'''
+		SELECT user_id, first_name, last_name
+		FROM Users
+		'''
+	)
+	user_data = cursor.fetchall()
+	user_ids = [row[0] for row in user_data]
+	user_names = ['{} {}'.format(row[1], row[2]) for row in user_data]
+
+	cursor = conn.cursor()
 	cursor.execute('''
 		SELECT COUNT(*), user_id
 		FROM Photos 
@@ -424,35 +435,38 @@ def getLeaderboard():
 
 	cursor = conn.cursor()
 	cursor.execute('''
-		SELECT COUNT(*) AS count , user_id FROM Comments 
+		SELECT COUNT(*), user_id 
+		FROM Comments 
 		GROUP BY user_id
 		''')
 	comments = cursor.fetchall()
 
-	photosD = {}
+	score_dict = {}
+	name_dict = {}
+	for i, user_id in enumerate(user_ids):
+		score_dict[user_id] = 0
+		name_dict[user_id] = user_names[i]
+
 	for x in photos:
-		photosD[x[1]] = x[0]
+		score_dict[x[1]] = x[0]
 	
 	for x in comments:
-		photosD[x[1]]+=x[0]
-	arr = []
-	for key in photosD:
-		temp = []
-		temp.append(key)
-		temp.append(photosD.get(key))
-		print(temp)
-		arr.append(temp)
+		score_dict[x[1]] += x[0]
+
+	leaders_ids_scores = []
+	for key in score_dict.keys():
+		leaders_ids_scores.append([key, score_dict[key], name_dict[key]])
 	
-	arr.sort(key = lambda x: x[1])
-	arr.reverse()
+	leaders_ids_scores.sort(key = lambda x: x[1])
+	leaders_ids_scores.reverse()
 
-	final = []
-	for i in arr:
-		temp = getName(i[0])
-		final.append(temp)
+	leaders_names = [row[2] for row in leaders_ids_scores]
+	leaders_scores = [row[1] for row in leaders_ids_scores]
 
-	if(len(final) < 10): return final
-	else: return final[-10:]
+	if len(leaders_names) < 10: 
+		return leaders_names, leaders_scores
+	else: 
+		return leaders_names[-10:], leaders_scores[-10:]
 
 def getName(user_id):
 	cursor = conn.cursor()
@@ -667,9 +681,17 @@ def searchfunction():
 @app.route("/")
 def hello():
 	user_id = getUserId()
-	leaders = getLeaderboard()
-	print(leaders)
-	return render_template('hello.html', message='Welecome to Photoshare' , photos = getAllPhotos(), base64=base64 ,  user_id=user_id, leaders = leaders) 
+	leaders, leaders_scores = getLeaderboard()
+	return render_template(
+		'hello.html', 
+		message='Welecome to Photoshare' , 
+		photos = getAllPhotos(), 
+		base64=base64,
+		user_id=user_id, 
+		leaders = leaders,
+		leaders_scores = leaders_scores,
+		len_leaders = len(leaders)
+	) 
 	#get list of photos
 
 if __name__ == "__main__":
