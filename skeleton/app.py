@@ -257,8 +257,8 @@ def register():
 @app.route("/register", methods=['POST'])
 def register_user():
 	try:
-		# lastname = request.form.get('lastname')
-		# firstname = request.form.get('firstname')
+		lastname = request.form.get('lastname')
+		firstname = request.form.get('firstname')
 		email=request.form.get('email')
 		password=request.form.get('password')
 	except:
@@ -267,7 +267,7 @@ def register_user():
 	cursor = conn.cursor()
 	test =  isEmailUnique(email)
 	if test:
-		(cursor.execute("INSERT INTO Users (email,password) VALUES ('{0}', '{1}')".format(email,password)))
+		(cursor.execute("INSERT INTO Users (email, first_name, last_name, password) VALUES ('{0}', '{1}' , '{2}' , '{3}')".format(email,firstname, lastname, password)))
 		conn.commit()
 		#log user in
 		user = User()
