@@ -22,7 +22,7 @@
     {% for album in albums %}
         <div class="album">
 
-            <p>Album {{album[1]}} </p>
+            <h3>{{album[1]}} </h3>
             <form  method="GET" action="{{ url_for('viewAlbum', albums_id=album[0]) }}">
                 <input type="submit" value="Look in Album" />
                 <input type="hidden" name="albumName" value="{{album[1]}}" />

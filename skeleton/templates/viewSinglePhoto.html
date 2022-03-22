@@ -1,14 +1,17 @@
 <!DOCTYPE html> 
 <body>
     <img src='data:image/jpg;base64, {{ base64.b64encode(photo).decode("ascii") }}' alt="single photo">
+
     <p style="color:Tomato;"> Liked by : {{ user_str }} </p>
-    <form action="{{ url_for('like_action', photo_id=photo_id) }}">
+
+    <form action="{{ url_for('like_action', photo_id=photo_id) }}" method="post">
         <input type="submit" value='Like'>
     </form>
     <p> Caption: <em>{{ caption }}</em> </p>
+
     <div class="content">
         <form action="{{ url_for('viewSinglePhoto', photo_id=photo_id) }}" method="POST">
-            <input type="text" name="content" id="content" value="Comment">
+            <input type="text" name="content" id="content" placeholder="Comment">
             <input type="submit" value="Submit">  
         </form>
     </div>
@@ -19,3 +22,8 @@
         {% endfor %}
     </div>
 </body>
+
+
+{% extends 'pagemenu.html' %}
+{% block content %}
+{%endblock %}

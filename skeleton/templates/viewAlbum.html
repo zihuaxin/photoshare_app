@@ -11,13 +11,16 @@
             <div class="albumPhotos">
                 <p>{{photo[1]}}</p>  <!--  photo caption-->
                 <img src='data:image/jpg;base64, {{ base64.b64encode(photo[2]).decode("ascii") }}'/></li>
+
+                {% if primaryuser == True %}
                 <form method="POST" action="/viewAlbum">
-                    <p>Delete Photo</p>
                     <input type="hidden" name="action" value="delete"/>
                     <input type="hidden" name="albumName" value="{{albumName}}"/>
                     <input type="hidden" name ="photo" value='{{photo[0]}}'/>
                     <input type="submit" value="Delete Photo" name = "delete" />
                 </form> 
+                {%endif%}
+                
                 <form action="{{ url_for('viewSinglePhoto', photo_id=photo[0]) }}">
                     <input type = "submit" value="View Photo"/>
                 </form>

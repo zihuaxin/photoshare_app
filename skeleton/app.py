@@ -24,7 +24,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '*PASSWORD*'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'sr24mesjw!'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -140,7 +140,7 @@ def viewSinglePhoto(photo_id):
 				'''
 					INSERT
 					INTO Comments(user_id, photo_id, text, date)
-					VALUES ({}, {}, "{}", CURRENT_DATE())
+					VALUES ('{0}', '{1}', "{2}", CURRENT_DATE())
 				'''.format(user_id, photo_id, flask.request.form['content'])
 			)
 		else:
@@ -152,7 +152,7 @@ def viewSinglePhoto(photo_id):
 		'''
 		SELECT U.first_name, U.last_name, C.text
 		FROM Users U, Comments C
-		WHERE U.user_id = C.user_id AND C.photo_id = {}
+		WHERE U.user_id = C.user_id AND C.photo_id = '{0}'
 		'''.format(photo_id)
 	)
 	comment_data = cursor.fetchall()
@@ -191,7 +191,7 @@ def like_action(photo_id):
 		'''
 			INSERT 
 			INTO Likes(photo_id,user_id)
-			VALUES ({}, {})
+			VALUES ('{0}', '{0}')
 		'''.format(photo_id, user_id)
 	)
 	conn.commit()
@@ -206,6 +206,7 @@ def login():
 				<input type='text' name='email' id='email' placeholder='email'></input>
 				<input type='password' name='password' id='password' placeholder='password'></input>
 				<input type='submit' name='submit'></input>
+
 			   </form></br>
 		   <a href='/'>Home</a>
 		   <a href='/albumOverview'>Your Alblums</a>
@@ -227,10 +228,20 @@ def login():
 	return "<a href='/login'>Try again</a>\
 			</br><a href='/register'>or make an account</a>"
 
+
+def getUserId():
+	if flask_login.current_user.is_authenticated:
+		user_id = getUserIdFromEmail(flask_login.current_user.id)
+	else:
+		user_id = getUnregisteredUserId()
+	return user_id
+
 @app.route('/logout')
 def logout():
 	flask_login.logout_user()
-	return render_template('hello.html', message='Logged out')
+	photos = getAllPhotos()
+	user_id = getUserId()
+	return render_template('hello.html', message='Logged out' , photos = photos, base64=base64, user_id = user_id)
 
 @login_manager.unauthorized_handler
 def unauthorized_handler():
@@ -242,21 +253,12 @@ def register():
 	return render_template('register.html', supress='True')
 
 
-@app.route("/showphotosByTags", methods=['GET', 'POST'])
-def showphotos():
-	if(request.method == 'POST'):
-		if request.form['searchTypeButton'] == 'Search By Tags':
-			#get photos by tag value
-			return render_template('hello.html', photos="PLACEHOLDER")
-		elif request.form['searchTypeButton'] == 'Search By Comments':
-			#get photos by comments
-			return render_template('hello.html', photos="PLACEHOLDER")
-
-
 
 @app.route("/register", methods=['POST'])
 def register_user():
 	try:
+		# lastname = request.form.get('lastname')
+		# firstname = request.form.get('firstname')
 		email=request.form.get('email')
 		password=request.form.get('password')
 	except:
@@ -265,13 +267,13 @@ def register_user():
 	cursor = conn.cursor()
 	test =  isEmailUnique(email)
 	if test:
-		print(cursor.execute("INSERT INTO Users (email, password) VALUES ('{0}', '{1}')".format(email, password)))
+		(cursor.execute("INSERT INTO Users (email,password) VALUES ('{0}', '{1}')".format(email,password)))
 		conn.commit()
 		#log user in
 		user = User()
 		user.id = email
 		flask_login.login_user(user)
-		return render_template('hello.html', name=email, message='Account Created!')
+		return render_template('hello.html', name=firstname, message='Account Created!')
 	else:
 		print("couldn't find all tokens")
 		return flask.redirect(flask.url_for('register'))
@@ -403,6 +405,59 @@ def getTagId(name):
 	cursor = conn.cursor()
 	cursor.execute("SELECT tag_id FROM Tags WHERE name = '{0}'".format(name))
 	return cursor.fetchone()[0]
+
+def getAllAlbums():
+	cursor = conn.cursor()
+	cursor.execute("SELECT * FROM ALbums")
+	return cursor.fetchall()
+
+
+def getLeaderboard():
+	cursor = conn.cursor()
+	cursor.execute('''
+		SELECT COUNT(*), user_id
+		FROM Photos 
+		GROUP BY user_id
+		''')
+	# print(cursor.fetchall())
+	photos = cursor.fetchall()
+
+	cursor = conn.cursor()
+	cursor.execute('''
+		SELECT COUNT(*) AS count , user_id FROM Comments 
+		GROUP BY user_id
+		''')
+	comments = cursor.fetchall()
+
+	photosD = {}
+	for x in photos:
+		photosD[x[1]] = x[0]
+	
+	for x in comments:
+		photosD[x[1]]+=x[0]
+	arr = []
+	for key in photosD:
+		temp = []
+		temp.append(key)
+		temp.append(photosD.get(key))
+		print(temp)
+		arr.append(temp)
+	
+	arr.sort(key = lambda x: x[1])
+	arr.reverse()
+
+	final = []
+	for i in arr:
+		temp = getName(i[0])
+		final.append(temp)
+
+	if(len(final) < 10): return final
+	else: return final[-10:]
+
+def getName(user_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT first_name FROM Users WHERE user_id = '{0}'".format(user_id))
+	return cursor.fetchone()
 
 def isEmailUnique(email):
 	#use this to check if a email has already been registered
@@ -551,57 +606,71 @@ def createAlbum():
 
 
 @app.route("/viewAlbum/<int:albums_id>" , methods=['GET', 'POST'])
-@flask_login.login_required
+# @flask_login.login_required
 def viewAlbum(albums_id):
+	primaryuser = False
+	user_id = getUserId()
 	if request.method == 'POST':
-		user_id = getUserIdFromEmail(flask_login.current_user.id)
 		if request.form['action'] == "delete":
 			photo_id = request.form['photo']
 			deletePhotos(photo_id)
-	
+		
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id FROM ALbums WHERE albums_id = '{0}'".format(albums_id))
+	albumCreator = cursor.fetchone()[0]
+	print(albumCreator, user_id)
+	if albumCreator == user_id:
+		primaryuser = True
+		
 	return render_template(
 		'viewAlbum.html', 
 		album = getAlbumPhotos(albums_id), 
 		base64=base64, 
 		albums_id = albums_id, 
-		album_name=getAlbumNameFromAlbumId(albums_id)
+		album_name=getAlbumNameFromAlbumId(albums_id),
+		primaryuser = primaryuser
 	)
 
 
 @app.route("/", methods=[ "POST"])
 def searchfunction():
+	user_id = getUserId()
 	if request.form['action'] == "photosearch":
 		if request.form['searchTypeButton'] == "Search All Photos By Tags":
 			tags = request.form['text']
 			photos = getPhotosbyTags(tags)
-			return render_template('hello.html', photos=photos , base64=base64)
+			return render_template('hello.html', photos=photos , base64=base64, user_id=user_id)
+
 		elif request.form['searchTypeButton'] == "Search All Photos By Comments":
 			comments = request.form['comments']
 			photos = getPhotosbyComments(comments)
-			return render_template('hello.html', photos = photos , base64=base64)
+			return render_template('hello.html', photos = photos , base64=base64,  user_id=user_id )
+
 		elif request.form['searchTypeButton'] == "Search Your Photos By Comments":
 			comments = request.form['comments']
 			photos = getYOURPhotosbyComments(comments)
-			return render_template('hello.html', photos = photos , base64=base64)
+			return render_template('hello.html', photos = photos , base64=base64,  user_id=user_id)
+
 		elif request.form['searchTypeButton'] == "Search Your Photos By Tags":
 			tags = request.form['text']
 			photos = getYOURPhotosbyTags(tags)
-			return render_template('hello.html', photos=photos , base64=base64)
+			return render_template('hello.html', photos=photos , base64=base64,  user_id=user_id)
+
+	if request.form['action'] == "showAlbums":
+			albums = getAllAlbums()
+			return render_template('hello.html', albums= albums,  user_id=user_id)
 	else:
 		photos = getAllPhotos()
-		return render_template('hello.html', message='Welecome to Photoshare',photos = getAllPhotos(), base64=base64) 
+		return render_template('hello.html', message='Welecome to Photoshare',photos = getAllPhotos(), base64=base64 , user_id=user_id) 
 
 #default page
 @app.route("/")
 def hello():
-		return render_template('hello.html', message='Welecome to Photoshare' , photos = getAllPhotos(), base64=base64) 
+	user_id = getUserId()
+	leaders = getLeaderboard()
+	print(leaders)
+	return render_template('hello.html', message='Welecome to Photoshare' , photos = getAllPhotos(), base64=base64 ,  user_id=user_id, leaders = leaders) 
 	#get list of photos
-
-def nametoChar(name):
-	char = 0
-	for x in name:
-		char += ord(x)
-	return char
 
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run

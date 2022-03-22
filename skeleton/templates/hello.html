@@ -9,14 +9,18 @@
     <input type="hidden" name="action" value="photosearch" />
     <input type="text" placeholder="Search" name="text" />
     <input type="submit" name="searchTypeButton" value="Search All Photos By Tags" />
-    <input type="submit" name="searchTypeButton" value="Search Your Photos By Tags" />
     <input type="submit" name="searchTypeButton" value="Search All Photos By Comments" />
+    {% if user_id != -1 %}
+    <input type="submit" name="searchTypeButton" value="Search Your Photos By Tags" />
     <input type="submit" name="searchTypeButton" value="Search Your Photos By Comments" />
-
+    {%endif%}
   </form>
 </div>
 
-
+<form method="post" action="/">
+  <input type="hidden" name="action" value="showAlbums"/>
+  <input type="submit" name="allOrMine" value="Show all albums"/>
+</form>
 
 {% if message == 'Logged out' %}
   <h4>{{message}}! </h4>
@@ -33,14 +37,47 @@
 
         <li>{{photo[1]}}<br>
         <img src='data:image/jpg;base64, {{ base64.b64encode(photo[2]).decode("ascii") }}'/></li>
+
+        <form action="{{ url_for('viewSinglePhoto', photo_id=photo[0]) }}">
+          <input type = "submit" value="View Photo"/>
+      </form>
     {% endfor %}
     </ul>
 {% endif %}
 
-{% if message == 'Logged out' %}
+{% if albums%}
+  <ul>
+  {% for album in albums %}
+    <div class="album">
+
+        <p>Album {{album[1]}} </p>
+        <form  method="GET" action="{{ url_for('viewAlbum', albums_id=album[0]) }}">
+            <input type="submit" value="Look in Album" />
+            <input type="hidden" name="albumName" value="{{album[1]}}" />
+        </form> 
+    </div>
+
+  {% endfor %}
+  </ul>
+{% endif %}
+
+{% if leaders%}
+  <h3> Contribution Leader Boards</h3>
+  <ul>
+    {% for user in leaders %}
+    <p>{{user}}</p>
+    {% endfor%}
+  </ul>
+{%endif%}
+
+
+{% if user_id == -1 %}
   <form action="/login">
     <input type="submit" value="Login" />
   </form>  
+  <form action="/register">
+    <input type="submit" value="Register" />
+  </form>
 {% else %}
   <form action="/profileOverview">
     <input type="submit" value="My profile Overview" />
