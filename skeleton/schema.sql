@@ -25,8 +25,8 @@ CREATE TABLE Users(
  );
 
  CREATE TABLE Friends(
- user_id1 INTEGER,
- user_id2 INTEGER,
+ user_id1 INTEGER, --user
+ user_id2 INTEGER, --friend
  PRIMARY KEY (user_id1, user_id2),
  FOREIGN KEY (user_id1)
  REFERENCES Users(user_id),
