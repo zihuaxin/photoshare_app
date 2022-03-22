@@ -1,6 +1,11 @@
 <!-- author ben lawson (balawson@bu.edu) -->
 <!doctype html>
 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block head %}{% endblock %}
+</head>
 
 <div class="searchBar"> 
   <form method="post" action="/">
@@ -34,7 +39,7 @@
     {% for photo in photos %}
 
         <li>{{photo[1]}}<br>
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[2]).decode("ascii") }}'/></li>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[2]).decode("ascii") }}' width="500" height="500"></li>
 
         <form action="{{ url_for('viewSinglePhoto', photo_id=photo[0]) }}">
           <input type = "submit" value="View Photo"/>
@@ -61,11 +66,18 @@
 
 {% if leaders%}
   <h3> Contribution Leader Boards</h3>
-  <ul>
-    {% for user in leaders %}
-    <p>{{user[0]}}</p>
+  <table style="border: 1px solid #aaa;">
+    <tr>
+      <th> Name </th>
+      <th> Score </th>
+    </tr>
+    {% for i in range(len_leaders) %}
+    <tr>
+      <td style="border: 1px solid #aaa">{{ leaders[i] }}</td>
+      <td style="border: 1px solid #aaa">{{ leaders_scores[i] }}</td>
+    </tr>
     {% endfor%}
-  </ul>
+  </table>
 {%endif%}
 
 {% if error%}

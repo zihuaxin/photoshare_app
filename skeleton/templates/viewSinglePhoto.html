@@ -2,9 +2,9 @@
 <body>
     <img src='data:image/jpg;base64, {{ base64.b64encode(photo).decode("ascii") }}' alt="single photo">
 
-    <p style="color:Tomato;"> Liked by : {{ user_str }} </p>
+    <p> <span style="color:Tomato;">{{ n_likes }}</span> likes by : {{ user_str }} </p>
 
-    <form action="{{ url_for('like_action', photo_id=photo_id) }}" method="post">
+    <form action="{{ url_for('like_action', photo_id=photo_id) }}" method="POST">
         <input type="submit" value='Like'>
     </form>
     <p> Caption: <em>{{ caption }}</em> </p>
@@ -16,10 +16,19 @@
         </form>
     </div>
     <div>
-        <p> Comments </p> 
-        {% for comment in comments%}
-        <p>  {{comment[0]}}: {{comment[1]}} </p>
-        {% endfor %}
+        <h3> Comments </h3> 
+        <table  style="border: 1px solid #aaa;">  
+            <tr>
+                <th style="border: 1px solid #aaa;"> Name </th>
+                <th style="border: 1px solid #aaa;"> Comment </th>
+            </tr>
+            {% for comment in comments%}
+            <tr>
+            <td style="border: 1px solid #aaa"> {{comment[0]}} </td>
+            <td style="border: 1px solid #aaa"> {{comment[1]}} </td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
 </body>
 

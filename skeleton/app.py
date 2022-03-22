@@ -104,13 +104,13 @@ def viewSinglePhoto(photo_id):
 	)
 	n_likes = int(cursor.fetchone()[0])
 
-	# getting users who liked
+	# getting users who liked this photo
 	cursor.execute(
 		'''
 		SELECT U.first_name, U.last_name
 		FROM Users U, Likes L
-		WHERE U.user_id = L.user_id
-		'''
+		WHERE U.user_id = L.user_id AND L.photo_id = {}
+		'''.format(photo_id)
 	)
 	user_list = cursor.fetchall()
 	names = ['{} {}'.format(name[0], name[1]) for name in user_list]
@@ -140,7 +140,7 @@ def viewSinglePhoto(photo_id):
 				'''
 					INSERT
 					INTO Comments(user_id, photo_id, text, date)
-					VALUES ('{0}', '{1}', "{2}", CURRENT_DATE())
+					VALUES ({}, {}, "{}", CURRENT_DATE())
 				'''.format(user_id, photo_id, flask.request.form['content'])
 			)
 		else:
@@ -152,7 +152,7 @@ def viewSinglePhoto(photo_id):
 		'''
 		SELECT U.first_name, U.last_name, C.text
 		FROM Users U, Comments C
-		WHERE U.user_id = C.user_id AND C.photo_id = '{0}'
+		WHERE U.user_id = C.user_id AND C.photo_id = {}
 		'''.format(photo_id)
 	)
 	comment_data = cursor.fetchall()
@@ -173,28 +173,27 @@ def viewSinglePhoto(photo_id):
 		photo_id=photo_id
 	)
 
-@app.route('/like/<int:photo_id>')
+@app.route('/like/<int:photo_id>', methods=['POST'])
 @flask_login.login_required
 def like_action(photo_id):
-
-	print(photo_id)
 
 	if flask_login.current_user.is_authenticated:
 		user_id = getUserIdFromEmail(flask_login.current_user.id)
 	else:
 		return 'You must log in before you like a photo'
 
-	print(user_id)
-
-	cursor = conn.cursor()
-	cursor.execute(
-		'''
-			INSERT 
-			INTO Likes(photo_id,user_id)
-			VALUES ('{0}', '{0}')
-		'''.format(photo_id, user_id)
-	)
-	conn.commit()
+	try:
+		cursor = conn.cursor()
+		cursor.execute(
+			'''
+				INSERT 
+				INTO Likes(photo_id,user_id)
+				VALUES ({}, {})
+			'''.format(photo_id, user_id)
+		)
+		conn.commit()
+	except Exception as e:
+		print(e)
 	
 	return redirect(request.referrer)
 
@@ -415,6 +414,17 @@ def getAllAlbums():
 
 def getLeaderboard():
 	cursor = conn.cursor()
+	cursor.execute(
+		'''
+		SELECT user_id, first_name, last_name
+		FROM Users
+		'''
+	)
+	user_data = cursor.fetchall()
+	user_ids = [row[0] for row in user_data]
+	user_names = ['{} {}'.format(row[1], row[2]) for row in user_data]
+
+	cursor = conn.cursor()
 	cursor.execute('''
 		SELECT COUNT(*), user_id
 		FROM Photos 
@@ -425,35 +435,38 @@ def getLeaderboard():
 
 	cursor = conn.cursor()
 	cursor.execute('''
-		SELECT COUNT(*) AS count , user_id FROM Comments 
+		SELECT COUNT(*), user_id 
+		FROM Comments 
 		GROUP BY user_id
 		''')
 	comments = cursor.fetchall()
 
-	photosD = {}
+	score_dict = {}
+	name_dict = {}
+	for i, user_id in enumerate(user_ids):
+		score_dict[user_id] = 0
+		name_dict[user_id] = user_names[i]
+
 	for x in photos:
-		photosD[x[1]] = x[0]
+		score_dict[x[1]] = x[0]
 	
 	for x in comments:
-		photosD[x[1]]+=x[0]
-	arr = []
-	for key in photosD:
-		temp = []
-		temp.append(key)
-		temp.append(photosD.get(key))
-		print(temp)
-		arr.append(temp)
+		score_dict[x[1]] += x[0]
+
+	leaders_ids_scores = []
+	for key in score_dict.keys():
+		leaders_ids_scores.append([key, score_dict[key], name_dict[key]])
 	
-	arr.sort(key = lambda x: x[1])
-	arr.reverse()
+	leaders_ids_scores.sort(key = lambda x: x[1])
+	leaders_ids_scores.reverse()
 
-	final = []
-	for i in arr:
-		temp = getName(i[0])
-		final.append(temp)
+	leaders_names = [row[2] for row in leaders_ids_scores]
+	leaders_scores = [row[1] for row in leaders_ids_scores]
 
-	if(len(final) < 10): return final
-	else: return final[-10:]
+	if len(leaders_names) < 10: 
+		return leaders_names, leaders_scores
+	else: 
+		return leaders_names[-10:], leaders_scores[-10:]
 
 def getName(user_id):
 	cursor = conn.cursor()
@@ -679,10 +692,17 @@ def searchfunction():
 @app.route("/")
 def hello():
 	user_id = getUserId()
-	leaders = getLeaderboard()
-	print(leaders)
-	users = getUsers()
-	return render_template('hello.html', message='Welecome to Photoshare' , photos = getAllPhotos(), base64=base64 ,  user_id=user_id , leaders = leaders) 
+	leaders, leaders_scores = getLeaderboard()
+	return render_template(
+		'hello.html', 
+		message='Welecome to Photoshare' ,
+		photos = getAllPhotos(), 
+		base64=base64,
+		user_id=user_id, 
+		leaders = leaders,
+		leaders_scores = leaders_scores,
+		len_leaders = len(leaders)
+	) 
 	#get list of photos
 
 if __name__ == "__main__":
