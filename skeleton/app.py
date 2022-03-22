@@ -24,7 +24,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'sr24mesjw!'
+app.config['MYSQL_DATABASE_PASSWORD'] = '*PASSWORD*'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -80,10 +80,8 @@ def new_page_function():
 	return new_page_html
 '''
 
-@app.route('/viewSinglePhoto', methods=['GET','POST'])
-def viewSinglePhoto():
-
-	photo_id = request.args.get('photo_id', None)
+@app.route('/viewSinglePhoto/<int:photo_id>', methods=['GET','POST'])
+def viewSinglePhoto(photo_id):
 
 	# get photo data and likes for the page
 	cursor = conn.cursor()
@@ -95,18 +93,6 @@ def viewSinglePhoto():
 		'''.format(photo_id)
 	)
 	photo_data = cursor.fetchone()
-	photo_data = base64.b64encode(photo_data).decode("ascii")
-
-	# getting comments
-	cursor = conn.cursor()
-	cursor.execute(
-		'''
-		SELECT C.text
-		FROM Users U, Comments C
-		WHERE U.user_id = C.user_id AND C.photo_id = {}
-		'''.format(photo_id)
-	)
-	comments = cursor.fetchall()
 
 	# getting number of likes
 	cursor.execute(
@@ -130,7 +116,7 @@ def viewSinglePhoto():
 	names = ['{} {}'.format(name[0], name[1]) for name in user_list]
 	user_str = ', '.join(names)
 
-	# user likes a page
+	# user entered a comment
 	if flask.request.method == 'POST':
 
 		if flask_login.current_user.is_authenticated:
@@ -138,34 +124,79 @@ def viewSinglePhoto():
 		else:
 			user_id = getUnregisteredUserId()
 
-		if flask.request.form['like']:
-			cursor = conn.cursor()
-			cursor.execute(
-				'''
-					INSERT 
-					INTO Likes(photo_id,user_id)
-					VALUES ({}, {})
-				'''.format(photo_id, user_id)
-			)
-			conn.commit()
-		else:
+		cursor = conn.cursor()
+		cursor.execute(
+			'''
+				SELECT user_id
+				FROM Photos
+				WHERE photo_id = {}
+			'''.format(photo_id)
+		)
+		photo_user_id = cursor.fetchone()[0]
+
+		if photo_user_id != user_id:
 			cursor = conn.cursor()
 			cursor.execute(
 				'''
 					INSERT
 					INTO Comments(user_id, photo_id, text, date)
-					VALUES ({}, {}, {}, CURRENT_DATE())
-				'''.format(user_id, photo_id, flask.requests.form['text'])
+					VALUES ({}, {}, "{}", CURRENT_DATE())
+				'''.format(user_id, photo_id, flask.request.form['content'])
 			)
+		else:
+			return 'You cannot comment on your own photo'
+
+	# getting comments
+	cursor = conn.cursor()
+	cursor.execute(
+		'''
+		SELECT U.first_name, U.last_name, C.text
+		FROM Users U, Comments C
+		WHERE U.user_id = C.user_id AND C.photo_id = {}
+		'''.format(photo_id)
+	)
+	comment_data = cursor.fetchall()
+	comments = []
+	for row in comment_data:
+		name = '{} {}'.format(row[0], row[1])
+		comment = row[2]
+		comments.append([name, comment])
 
 	return render_template(
 		'viewSinglePhoto.html',
 		caption=photo_data[0],
-		photo=photo_data[1], 
+		photo=photo_data[1],
+		base64=base64,
 		n_likes=n_likes, 
 		user_str=user_str,
-		comments=comments
+		comments=comments,
+		photo_id=photo_id
 	)
+
+@app.route('/like/<int:photo_id>')
+@flask_login.login_required
+def like_action(photo_id):
+
+	print(photo_id)
+
+	if flask_login.current_user.is_authenticated:
+		user_id = getUserIdFromEmail(flask_login.current_user.id)
+	else:
+		return 'You must log in before you like a photo'
+
+	print(user_id)
+
+	cursor = conn.cursor()
+	cursor.execute(
+		'''
+			INSERT 
+			INTO Likes(photo_id,user_id)
+			VALUES ({}, {})
+		'''.format(photo_id, user_id)
+	)
+	conn.commit()
+	
+	return redirect(request.referrer)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
