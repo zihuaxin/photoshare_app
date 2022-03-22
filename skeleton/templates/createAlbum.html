@@ -5,6 +5,10 @@
 <div>
 
     <h1>Create an Album</h1>
+    {% if error %}
+        <h2>Please enter a new album name</h2>
+    {%endif%}
+
     <div>
         <form method="post" action="/createAlbum"> 
             <label for="title">Album Title:</label>

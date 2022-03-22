@@ -26,6 +26,7 @@
             <form  method="GET" action="{{ url_for('viewAlbum', albums_id=album[0]) }}">
                 <input type="submit" value="Look in Album" />
                 <input type="hidden" name="albumName" value="{{album[1]}}" />
+                <input type-hidden="name" name ="album_id" value="{{album[0]}"/>
             </form> 
             <form method="POST" action="/profileOverview">
                 <input type="hidden" name="action" value="deleteAlbum"/>
