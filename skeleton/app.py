@@ -182,15 +182,18 @@ def like_action(photo_id):
 	else:
 		return 'You must log in before you like a photo'
 
-	cursor = conn.cursor()
-	cursor.execute(
-		'''
-			INSERT 
-			INTO Likes(photo_id,user_id)
-			VALUES ({}, {})
-		'''.format(photo_id, user_id)
-	)
-	conn.commit()
+	try:
+		cursor = conn.cursor()
+		cursor.execute(
+			'''
+				INSERT 
+				INTO Likes(photo_id,user_id)
+				VALUES ({}, {})
+			'''.format(photo_id, user_id)
+		)
+		conn.commit()
+	except Exception as e:
+		print(e)
 	
 	return redirect(request.referrer)
 
