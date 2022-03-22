@@ -15,11 +15,11 @@
                     <p>Delete Photo</p>
                     <input type="hidden" name="action" value="delete"/>
                     <input type="hidden" name="albumName" value="{{albumName}}"/>
-                    <input type="hidden" name = "photo" value= '{{photo[0]}}'/>
+                    <input type="hidden" name ="photo" value='{{photo[0]}}'/>
                     <input type="submit" value="Delete Photo" name = "delete" />
                 </form> 
-                <form action="/vewSinglePhoto">
-                    <input type = "submit" value="view photo"/>
+                <form action="{{ url_for('viewSinglePhoto', photo_id=photo[0]) }}">
+                    <input type = "submit" value="View Photo"/>
                 </form>
             </div>
         {% endfor %}
