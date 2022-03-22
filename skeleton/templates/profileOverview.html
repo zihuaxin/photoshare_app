@@ -26,6 +26,7 @@
             <form  method="GET" action="/viewAlbum">
                 <input type="submit" value="Look in Album" />
                 <input type="hidden" name="albumName" value="{{album[1]}}" />
+                <input type-hidden="name" name ="album_id" value="{{album[0]}"/>
             </form> 
             <form method="POST" action="/profileOverview">
                 <input type="hidden" name="action" value="deleteAlbum"/>
@@ -60,6 +61,14 @@
 <form action="/upload">
     <input type="submit" value="Add photo"/>
   </form> 
+  
+  <div>
+      {% if error %}
+      <h2>"Must have an album before uploading a photo"</h2>
+      {%endif%}
+  </div>
+
+
 <form action="/createAlbum">
     <input type="submit" value="Create Album" />
 </form>

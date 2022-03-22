@@ -8,10 +8,15 @@
   <form method="post" action="/">
     <input type="hidden" name="action" value="photosearch" />
     <input type="text" placeholder="Search" name="text" />
-    <input type="submit" name="searchTypeButton" value="Search By Tags" />
-    <input type="submit" name="searchTypeButton" value="Search By Comments" />
+    <input type="submit" name="searchTypeButton" value="Search All Photos By Tags" />
+    <input type="submit" name="searchTypeButton" value="Search Your Photos By Tags" />
+    <input type="submit" name="searchTypeButton" value="Search All Photos By Comments" />
+    <input type="submit" name="searchTypeButton" value="Search Your Photos By Comments" />
+
   </form>
 </div>
+
+
 
 {% if message == 'Logged out' %}
   <h4>{{message}}! </h4>
@@ -22,7 +27,7 @@
 {% endif %}
 
 {% if photos %}
-<h2>Here are your photos</h2>
+<h2>Photos:</h2>
     <ul>
     {% for photo in photos %}
 
