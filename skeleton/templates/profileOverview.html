@@ -23,7 +23,7 @@
         <div class="album">
 
             <p>Album {{album[1]}} </p>
-            <form  method="GET" action="/viewAlbum">
+            <form  method="GET" action="{{ url_for('viewAlbum', albums_id=album[0]) }}">
                 <input type="submit" value="Look in Album" />
                 <input type="hidden" name="albumName" value="{{album[1]}}" />
             </form> 
@@ -57,9 +57,6 @@
     </ul>
 {% endif %}
 
-<form action="/upload">
-    <input type="submit" value="Add photo"/>
-  </form> 
 <form action="/createAlbum">
     <input type="submit" value="Create Album" />
 </form>

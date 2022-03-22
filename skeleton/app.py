@@ -313,7 +313,10 @@ def getPhotosbyTags(tags):
 	
 
 
-
+def getAlbumNameFromAlbumId(id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT name FROM Albums WHERE albums_id = '{0}'".format(id))
+	return cursor.fetchone()[0]
 
 def getAlbumPhotos(album_id):
 	cursor = conn.cursor()
@@ -409,18 +412,20 @@ def getUsersPhotos(uid):
 
 
 
-@app.route('/upload', methods=['GET', 'POST'])
+@app.route('/upload/<int:albums_id>', methods=['GET', 'POST'])
 @flask_login.login_required
-def upload():
+def upload(albums_id):
 	if request.method == 'POST':
 		user_id = getUserIdFromEmail(flask_login.current_user.id)
 		imgfile = request.files['photo']
 		caption = request.form['caption']
-		albumName = request.form['albumName']
-		album_id = getAlbum_IdFromName(albumName)
 		photo_data = imgfile.read()
 		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Photos (caption, data, albums_id, user_id) VALUES ( %s, %s, %s, %s )''' ,(caption, photo_data, album_id, user_id))
+		cursor.execute('''
+			INSERT INTO 
+			Photos (caption, data, albums_id, user_id) 
+			VALUES ( %s, %s, %s, %s )
+		''' ,(caption, photo_data, albums_id, user_id))
 		conn.commit()
 		photo_id = getPhoto_id(caption)
 		tags = request.form['tags'].split()
@@ -481,32 +486,22 @@ def createAlbum():
 		#create new album id 
 
 
-#<albumName> add when I can figure out how to pass it with render_template
-@app.route("/viewAlbum" , methods=['POST'])
+@app.route("/viewAlbum/<int:albums_id>" , methods=['GET', 'POST'])
 @flask_login.login_required
-def viewAlbum():
-	album_id = getAlbum_IdFromName(request.form['albumName'])
+def viewAlbum(albums_id):
 	if request.method == 'POST':
 		user_id = getUserIdFromEmail(flask_login.current_user.id)
 		if request.form['action'] == "delete":
 			photo_id = request.form['photo']
 			deletePhotos(photo_id)
-			return render_template('viewAlbum.html', album = getAlbumPhotos(album_id), base64=base64, album_id = album_id)		
-		else:
-			# album_id = getAlbum_IdFromName(albumName)
-			return render_template('viewAlbum.html',  album = getAlbumPhotos(album_id), base64=base64, album_id = album_id )
-	else:
-		# album_id = getAlbum_IdFromName(albumName)
-		return	render_template('viewAlbum.html',  album = getAlbumPhotos(album_id), base64=base64, album_id = album_id )
-
-
-@app.route('/viewAlbum/<albumName>', methods=['GET'])
-@flask_login.login_required
-def viewAlbumGet():
-	args = request.args
-	albumName = args.get('albumName')
-	album_id = getAlbum_IdFromName(albumName)
-	return	render_template('viewAlbum.html', albumName=args.get('albumName'), album = getAlbumPhotos(album_id), base64=base64 )
+	
+	return render_template(
+		'viewAlbum.html', 
+		album = getAlbumPhotos(albums_id), 
+		base64=base64, 
+		albums_id = albums_id, 
+		album_name=getAlbumNameFromAlbumId(albums_id)
+	)
 
 
 @app.route("/", methods=[ "POST"])
