@@ -152,7 +152,7 @@ def viewSinglePhoto(photo_id):
 		'''
 		SELECT U.first_name, U.last_name, C.text
 		FROM Users U, Comments C
-		WHERE U.user_id = C.user_id AND C.photo_id = '{0}'
+		WHERE U.user_id = C.user_id AND C.photo_id = {}
 		'''.format(photo_id)
 	)
 	comment_data = cursor.fetchall()
