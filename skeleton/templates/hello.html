@@ -2,8 +2,6 @@
 <!doctype html>
 
 
-
-
 <div class="searchBar"> 
   <form method="post" action="/">
     <input type="hidden" name="action" value="photosearch" />
@@ -65,11 +63,28 @@
   <h3> Contribution Leader Boards</h3>
   <ul>
     {% for user in leaders %}
-    <p>{{use[0]}}</p>
+    <p>{{user[0]}}</p>
     {% endfor%}
   </ul>
 {%endif%}
 
+{% if error%}
+<h2>User is aleady your friend</h2>
+{%endif%}
+
+{% if friends %}
+  <h3>Find/Add friends</h3>
+  <ul>
+    {%for friend in friends%}
+    <p>{{friend[1]}}</p>
+    <form method="post">
+      <input type="hidden" name="action" value="Add_friend" />
+      <input type="hidden" name="friend_id" value="{{friend[0]}}"/>
+      <input type="submit" name="button" value="Add friend"/>
+    </form>
+    {%endfor%}
+  </ul>
+{%endif%}
 
 {% if user_id == -1 %}
   <form action="/login">

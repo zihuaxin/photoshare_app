@@ -273,7 +273,8 @@ def register_user():
 		user = User()
 		user.id = email
 		flask_login.login_user(user)
-		return render_template('hello.html', name=firstname, message='Account Created!')
+		leaders = getLeaderboard()
+		return redirect(url_for('hello', name=firstname, message='Account Created!' , leaders = leaders))
 	else:
 		print("couldn't find all tokens")
 		return flask.redirect(flask.url_for('register'))
@@ -480,6 +481,7 @@ def isPhotoCaptionUnique(name):
 		return True
 
 
+
 def isAlbumReal(name):
 	cursor = conn.cursor()
 	user_id = getUserIdFromEmail(flask_login.current_user.id)
@@ -506,7 +508,7 @@ def deletePhotos(photo_id):
 @app.route('/profile')
 @flask_login.login_required
 def protected():
-	return redirect(url_for('hello', name=flask_login.current_user.id, message="Here's your profile"))
+	return redirect(url_for('hello', name=flask_login.current_user.id, message="Here's your profile") , leaders = getLeaderboard() )
 
 #begin photo uploading code
 # photos uploaded using base64 encoding so they can be directly embeded in HTML
@@ -635,33 +637,43 @@ def viewAlbum(albums_id):
 @app.route("/", methods=[ "POST"])
 def searchfunction():
 	user_id = getUserId()
+	leaders = getLeaderboard()
+	users = getUsers()
 	if request.form['action'] == "photosearch":
 		if request.form['searchTypeButton'] == "Search All Photos By Tags":
 			tags = request.form['text']
 			photos = getPhotosbyTags(tags)
-			return render_template('hello.html', photos=photos , base64=base64, user_id=user_id)
+			return render_template('hello.html', photos=photos , base64=base64, user_id=user_id , leaders = leaders)
 
 		elif request.form['searchTypeButton'] == "Search All Photos By Comments":
 			comments = request.form['comments']
 			photos = getPhotosbyComments(comments)
-			return render_template('hello.html', photos = photos , base64=base64,  user_id=user_id )
+			return render_template('hello.html', photos = photos , base64=base64,  user_id=user_id , leaders = leader )
 
 		elif request.form['searchTypeButton'] == "Search Your Photos By Comments":
 			comments = request.form['comments']
 			photos = getYOURPhotosbyComments(comments)
-			return render_template('hello.html', photos = photos , base64=base64,  user_id=user_id)
+			return render_template('hello.html', photos = photos , base64=base64,  user_id=user_id , leaders = leaders)
 
 		elif request.form['searchTypeButton'] == "Search Your Photos By Tags":
 			tags = request.form['text']
 			photos = getYOURPhotosbyTags(tags)
-			return render_template('hello.html', photos=photos , base64=base64,  user_id=user_id)
+			return render_template('hello.html', photos=photos , base64=base64,  user_id=user_id, leaders = leaders)
 
 	if request.form['action'] == "showAlbums":
 			albums = getAllAlbums()
-			return render_template('hello.html', albums= albums,  user_id=user_id)
+			return render_template('hello.html', albums= albums,  user_id=user_id, leaders = leaders )
+	if request.form['action'] == "Add_friend":
+			friend = request.form['friend_id']
+			if checkifFriend(friend):
+				return render_template('hello.html', photos=photos , base64=base64,  user_id=user_id , error = "User is already your Friend", leaders = leaders)
+			else:
+				addFriend(friend)
+				return render_template('hello.html', photos=photos , base64=base64,  user_id=user_id, leaders = leaders)
+
 	else:
 		photos = getAllPhotos()
-		return render_template('hello.html', message='Welecome to Photoshare',photos = getAllPhotos(), base64=base64 , user_id=user_id) 
+		return render_template('hello.html', message='Welecome to Photoshare',photos = getAllPhotos(), base64=base64 , user_id=user_id , leaders = leaders) 
 
 #default page
 @app.route("/")
@@ -669,7 +681,8 @@ def hello():
 	user_id = getUserId()
 	leaders = getLeaderboard()
 	print(leaders)
-	return render_template('hello.html', message='Welecome to Photoshare' , photos = getAllPhotos(), base64=base64 ,  user_id=user_id, leaders = leaders) 
+	users = getUsers()
+	return render_template('hello.html', message='Welecome to Photoshare' , photos = getAllPhotos(), base64=base64 ,  user_id=user_id , leaders = leaders) 
 	#get list of photos
 
 if __name__ == "__main__":
