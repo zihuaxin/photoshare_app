@@ -107,8 +107,14 @@ VALUES ("Rick", "Roll", "rroll@bu.edu", CURRENT_DATE(), "US", "male", "test");
 INSERT INTO Albums(albums_id, name, date, user_id)
 VALUES (1, "Test_Album", CURRENT_DATE(), 1);
 
+INSERT INTO Albums(albums_id, name, date, user_id)
+VALUES (2, "Test_Album", CURRENT_DATE(), 2);
+
 INSERT INTO Photos(photo_id, caption, data, user_id, albums_id)
-VALUES (1, "rick roll", LOAD_FILE('C:\ProgramData\MySQL\MySQL Server 8.0\Uploads\rickroll_4k.jpg'), 1, 1);
+VALUES (1, "rick roll", NULL, 1, 1);
+
+INSERT INTO Photos(photo_id, caption, data, user_id, albums_id)
+VALUES (2, "tree", NULL, 2, 2);
 
 INSERT INTO Comments(comment_id, user_id, photo_id, text, date)
 VALUES (1, 2, 1, "legendary", CURRENT_DATE());
@@ -126,5 +132,4 @@ INSERT Likes(user_id, photo_id)
 VALUES (2, 1);
 
 SELECT *
-FROM Photos
-WHERE Photos.photo_id = 1;
+FROM Photos;
