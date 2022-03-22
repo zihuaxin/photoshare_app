@@ -104,13 +104,13 @@ def viewSinglePhoto(photo_id):
 	)
 	n_likes = int(cursor.fetchone()[0])
 
-	# getting users who liked
+	# getting users who liked this photo
 	cursor.execute(
 		'''
 		SELECT U.first_name, U.last_name
 		FROM Users U, Likes L
-		WHERE U.user_id = L.user_id
-		'''
+		WHERE U.user_id = L.user_id AND L.photo_id = {}
+		'''.format(photo_id)
 	)
 	user_list = cursor.fetchall()
 	names = ['{} {}'.format(name[0], name[1]) for name in user_list]
@@ -140,7 +140,7 @@ def viewSinglePhoto(photo_id):
 				'''
 					INSERT
 					INTO Comments(user_id, photo_id, text, date)
-					VALUES ('{0}', '{1}', "{2}", CURRENT_DATE())
+					VALUES ({}, {}, "{}", CURRENT_DATE())
 				'''.format(user_id, photo_id, flask.request.form['content'])
 			)
 		else:
@@ -173,25 +173,21 @@ def viewSinglePhoto(photo_id):
 		photo_id=photo_id
 	)
 
-@app.route('/like/<int:photo_id>')
+@app.route('/like/<int:photo_id>', methods=['POST'])
 @flask_login.login_required
 def like_action(photo_id):
-
-	print(photo_id)
 
 	if flask_login.current_user.is_authenticated:
 		user_id = getUserIdFromEmail(flask_login.current_user.id)
 	else:
 		return 'You must log in before you like a photo'
 
-	print(user_id)
-
 	cursor = conn.cursor()
 	cursor.execute(
 		'''
 			INSERT 
 			INTO Likes(photo_id,user_id)
-			VALUES ('{0}', '{0}')
+			VALUES ({}, {})
 		'''.format(photo_id, user_id)
 	)
 	conn.commit()
