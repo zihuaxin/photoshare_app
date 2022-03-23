@@ -12,10 +12,9 @@
     <input type="hidden" name="action" value="photosearch" />
     <input type="text" placeholder="Search" name="text" />
     <input type="submit" name="searchTypeButton" value="Search All Photos By Tags" />
-    <input type="submit" name="searchTypeButton" value="Search All Photos By Comments" />
+    <input type="submit" name="searchTypeButton" value="Search Users By Comments" />
     {% if user_id != -1 %}
     <input type="submit" name="searchTypeButton" value="Search Your Photos By Tags" />
-    <input type="submit" name="searchTypeButton" value="Search Your Photos By Comments" />
     {%endif%}
   </form>
 </div>
@@ -34,6 +33,18 @@
   <form action="/recommendedPhotos">
     <input type="submit" value="Recommended Photos"/>
   </form>
+{%endif%}
+
+
+
+{%if users%}
+  <h2>Users:</h2>
+    <ul>
+      {% for user in users %}
+        <p>{{user[1]}} {{user[2]}}</p>
+      {% endfor %}
+    </ul>
+
 {%endif%}
 
 {% if message == 'Logged out' %}

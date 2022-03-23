@@ -146,6 +146,7 @@ def viewSinglePhoto(photo_id):
 					VALUES ({}, {}, "{}", CURRENT_DATE())
 				'''.format(user_id, photo_id, flask.request.form['content'])
 			)
+			conn.commit()
 		else:
 			return 'You cannot comment on your own photo'
 
@@ -441,9 +442,10 @@ def getPhoto_id(caption):
 	cursor.execute("SELECT photo_id FROM Photos WHERE caption = '{0}' AND user_id = '{1}'".format(caption, user_id))
 	return cursor.fetchone()[0]
 
-def getPhotosbyComments(comment):
+def getUsersbyComments(comment):
 	cursor = conn.cursor()
-	cursor.execute("SELECT * FROM Photos, Comments WHERE Comments.text = '{0}' AND Photos.photo_id = Comments.photo_id".format(comment))
+	cursor.execute('''SELECT U.user_id, U.first_name, U.last_name, COUNT(*) AS ccount FROM Comments C, Users U WHERE text='{}' AND U.user_id = C.user_id GROUP BY user_id ORDER BY ccount DESC
+		'''.format(comment))
 	return cursor.fetchall()
 
 def getYOURPhotosbyComments(comment):
@@ -664,7 +666,7 @@ def getTopTags():
 		return arr[-3:]
 	
 def getUsersTags():
-	user_id = getUserIdFromEmail(flask_login.current_user.id)
+	user_id = getUserId()
 	cursor = conn.cursor()
 	cursor.execute('''SELECT Tagged.tag_id, Tags.name 
 					FROM Tagged, Photos , Tags 
@@ -684,10 +686,11 @@ def getTaggedPhotos():
 				for x in getPhotosbyTags(tagList):	
 					arr.append(x)
 	
+
 	arr.reverse()
-
-
-	return arr
+	setter = list(set(arr))
+	
+	return setter
 
 def isAlbumReal(name):
 	cursor = conn.cursor()
@@ -862,24 +865,22 @@ def searchfunction():
 	leaders ,leaders_scores= getLeaderboard()
 	if request.form['action'] == "photosearch":
 		if request.form['searchTypeButton'] == "Search All Photos By Tags":
+		
 			tags = request.form['text']
 			photos = getPhotosbyTags(tags)
 			return render_template('hello.html', photos=photos , base64=base64, user_id=user_id , leaders = leaders  ,leaders_scores = leaders_scores,
 		len_leaders = len(leaders))
 
-		elif request.form['searchTypeButton'] == "Search All Photos By Comments":
-			comments = request.form['comments']
-			photos = getPhotosbyComments(comments)
-			return render_template('hello.html', photos = photos , base64=base64,  user_id=user_id , leaders = leaders  ,leaders_scores = leaders_scores,
+		elif request.form['searchTypeButton'] == "Search Users By Comments":
+			comments = request.form['text']
+			users = getUsersbyComments(comments)
+			print(users)
+			return render_template('hello.html', users = users , base64=base64,  user_id=user_id , leaders = leaders  ,leaders_scores = leaders_scores,
 		len_leaders = len(leaders))
 
-		elif request.form['searchTypeButton'] == "Search Your Photos By Comments":
-			comments = request.form['comments']
-			photos = getYOURPhotosbyComments(comments)
-			return render_template('hello.html', photos = photos , base64=base64,  user_id=user_id , leaders = leaders ,leaders_scores = leaders_scores,
-		len_leaders = len(leaders))
 
 		elif request.form['searchTypeButton'] == "Search Your Photos By Tags":
+			
 			tags = request.form['text']
 			photos = getYOURPhotosbyTags(tags)
 			return render_template('hello.html', photos=photos , base64=base64,  user_id=user_id, leaders = leaders ,leaders_scores = leaders_scores,
@@ -900,7 +901,7 @@ def searchfunction():
 def hello():
 	user_id = getUserId()
 	leaders, leaders_scores = getLeaderboard()
-	getUsersTags()
+
 	return render_template(
 		'hello.html', 
 		message='Welecome to Photoshare' ,
