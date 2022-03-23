@@ -26,7 +26,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '*PASSROWD*'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'sr24mesjw!'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -643,6 +643,25 @@ def isPhotoCaptionUnique(name):
 	else:
 		return True
 
+def getTopTags():
+	cursor = conn.cursor()
+	cursor.execute("SELECT COUNT(*), tag_id FROM Tagged GROUP BY tag_id")
+	tags = cursor.fetchall()
+	arr = []
+	for x in tags:
+		temp = [x[1],x[0]]
+		cursor  = conn.cursor()
+		cursor.execute("SELECT name FROM Tags WHERE tag_id = %s",(temp[0]))
+		name = cursor.fetchone()[0]
+		temp.append(name)
+		arr.append(temp)
+	arr.sort(key=lambda x: x[1])
+	arr.reverse()
+	if len(arr) < 3:
+		return arr
+	else:
+		return arr[-3:]
+	
 
 
 def isAlbumReal(name):
@@ -671,9 +690,8 @@ def deletePhotos(photo_id):
 @app.route('/profile')
 @flask_login.login_required
 def protected():
-	leaders , leader_scores = getLeaderboard()
-	return redirect(url_for('hello', name=flask_login.current_user.id, message="Here's your profile") , leaders =leaders , leader_scores = leader_scores,
-		len_leaders = len(leaders) )
+	leaders , leaders_scores = getLeaderboard()
+	return redirect(url_for('hello', name=flask_login.current_user.id, message="Here's your profile", leaders =leaders , leaders_scores = leaders_scores , len_leaders = len(leaders) ))
 
 #begin photo uploading code
 # photos uploaded using base64 encoding so they can be directly embeded in HTML
@@ -686,8 +704,17 @@ def getUsersPhotos(uid):
 	cursor.execute("SELECT * FROM Photos WHERE user_id = '{0}'".format(uid))
 	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
 
+@app.route('/topTags')
+def topTags():
 
+	return render_template('topTags.html', tags = getTopTags())
 
+@app.route('/photosByTags', methods=['POST'])
+def photosByTags():
+
+	tagName = request.form['tag_name']
+	tagPhotos = getPhotosbyTags(tagName)
+	return render_template('photosByTags.html', tagPhotos = tagPhotos, tagName = tagName , base64=base64 )
 
 @app.route('/upload/<int:albums_id>', methods=['GET', 'POST'])
 @flask_login.login_required
@@ -843,6 +870,7 @@ def searchfunction():
 def hello():
 	user_id = getUserId()
 	leaders, leaders_scores = getLeaderboard()
+	getTopTags()
 	return render_template(
 		'hello.html', 
 		message='Welecome to Photoshare' ,

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+
+<h1> Top Tags</h1>
+    
+        <ol type="1">
+            {%for tag in tags%}
+            <li>
+                <h3> {{tag[2]}}</h3>
+                <form method="post" action="/photosByTags" >
+                    <input type="submit" value="See Photos"/>
+                    <input type="hidden" name = "tag_name" value="{{tag[2]}}"/>
+                </form>
+            </li>
+                
+            {%endfor%}
+        </ol>
+    
+
+
+{% extends 'pagemenu.html' %} 
+{% block content %}
+{%endblock %}
+
+
+

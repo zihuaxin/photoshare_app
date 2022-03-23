@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+
+
+<h1> Photos for Tag: {{tagName}} </h1>
+
+ <ul>
+    {%for photo in tagPhotos%}
+        <li>{{photo[1]}}<br>
+            <img src='data:image/jpg;base64, {{ base64.b64encode(photo[2]).decode("ascii") }}' width="500" height="500"></li>
+
+        <form action="{{ url_for('viewSinglePhoto', photo_id=photo[0]) }}">
+            <input type = "submit" value="View Photo"/>
+        </form>
+
+    {%endfor%}
+ </ul>
+
+
+
+{% extends 'pagemenu.html' %} 
+{% block content %}
+{%endblock %}
+
+
+
