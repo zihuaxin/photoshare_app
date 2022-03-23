@@ -25,8 +25,8 @@ CREATE TABLE Users(
  );
 
  CREATE TABLE Friends(
- user_id1 INTEGER, --user
- user_id2 INTEGER, --friend
+ user_id1 INTEGER,
+ user_id2 INTEGER,
  PRIMARY KEY (user_id1, user_id2),
  FOREIGN KEY (user_id1)
  REFERENCES Users(user_id),
@@ -102,7 +102,25 @@ INSERT INTO Users(first_name, last_name, email, birth_date, hometown, gender, pa
 VALUES ("Sarsen", "Whatmore", "sarsenw@bu.edu", CURRENT_DATE(), "US", "male", "test");
 
 INSERT INTO Users(first_name, last_name, email, birth_date, hometown, gender, password)
-VALUES ("Rick", "Roll", "rroll@bu.edu", CURRENT_DATE(), "US", "male", "test");
+VALUES ("A", "A", "aa@bu.edu", CURRENT_DATE(), "US", "male", "test");
+
+INSERT INTO Users(first_name, last_name, email, birth_date, hometown, gender, password)
+VALUES ("B", "A", "ba@bu.edu", CURRENT_DATE(), "US", "male", "test");
+
+INSERT INTO Users(first_name, last_name, email, birth_date, hometown, gender, password)
+VALUES ("C", "A", "ca@bu.edu", CURRENT_DATE(), "US", "male", "test");
+
+INSERT INTO Users(first_name, last_name, email, birth_date, hometown, gender, password)
+VALUES ("D", "A", "da@bu.edu", CURRENT_DATE(), "US", "male", "test");
+
+INSERT INTO Users(first_name, last_name, email, birth_date, hometown, gender, password)
+VALUES ("E", "A", "ea@bu.edu", CURRENT_DATE(), "US", "male", "test");
+
+INSERT INTO Users(first_name, last_name, email, birth_date, hometown, gender, password)
+VALUES ("F", "A", "fa@bu.edu", CURRENT_DATE(), "US", "male", "test");
+
+INSERT INTO Users(first_name, last_name, email, birth_date, hometown, gender, password)
+VALUES ("G", "A", "ga@bu.edu", CURRENT_DATE(), "US", "male", "test");
 
 INSERT INTO Albums(albums_id, name, date, user_id)
 VALUES (1, "Test_Album", CURRENT_DATE(), 1);
@@ -129,7 +147,22 @@ INSERT INTO Tagged(tag_id, photo_id)
 VALUES (1, 1);
 
 INSERT Likes(user_id, photo_id)
+VALUES (1, 2);
+
+INSERT Likes(user_id, photo_id)
 VALUES (2, 1);
+
+INSERT Likes(user_id, photo_id)
+VALUES (1, 3);
+
+INSERT Likes(user_id, photo_id)
+VALUES (3, 1);
+
+INSERT Likes(user_id, photo_id)
+VALUES (5, 2);
+
+INSERT Likes(user_id, photo_id)
+VALUES (2, 5);
 
 SELECT *
 FROM Photos;
