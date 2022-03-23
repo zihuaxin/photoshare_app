@@ -11,7 +11,7 @@
         <th style="border: 1px solid #aaa;"> Name </th>
     </tr>
     {% for name in friend_names %}
-    <tr> <th> {{ name }} </th> </tr>
+    <tr> <th style="border: 1px solid #aaa;"> {{ name }} </th> </tr>
     {% endfor %}
 </table>
 
@@ -24,7 +24,11 @@
     {% for i in range(len_rec) %}
     <tr> 
         <td> {{ recommended_friends_names[i] }} </td> 
-        <td> <button onclick="url_for('addFriend', friend_id=recommended_friends_ids[i])"> Add Friend </button> </td> 
+        <td style="border: 1px solid #aaa;"> 
+            <form action="{{ url_for('addFriend', friend_id=recommended_friends_ids[i]) }}" method="post">
+                <input type="submit" name="Add Friend">
+            </form>
+        </td> 
     </tr>
     {% endfor %}
 </table>

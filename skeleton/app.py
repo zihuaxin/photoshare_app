@@ -26,7 +26,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'sr24mesjw!'
+app.config['MYSQL_DATABASE_PASSWORD'] = '*PASSWORD*'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -252,18 +252,18 @@ def friends():
 			return 'No users found with the ID entered'
 	
 	friend_names = getUserFriendNames(user_id)
-	recommended_friends_id = getRecommendedFriendsId(user_id)
-	recommended_friends_names = [getFullName(rec_id) for rec_id in recommended_friends_id]
+	recommended_friends_ids = getRecommendedFriendsId(user_id)
+	recommended_friends_names = [getFullName(rec_id) for rec_id in recommended_friends_ids]
 
 	return render_template(
 		'friends.html', 
 		friend_names=friend_names, 
-		recommended_friends_id=recommended_friends_id,
+		recommended_friends_ids=recommended_friends_ids,
 		recommended_friends_names=recommended_friends_names,
-		len_rec = len(recommended_friends_id)
+		len_rec = len(recommended_friends_ids)
 	)
 
-@app.route('/addFriend/<int:friend_id>')
+@app.route('/addFriend/<int:friend_id>', methods=['POST'])
 def addFriend(friend_id):
 	if flask_login.current_user.is_authenticated:
 		user_id = getUserIdFromEmail(flask_login.current_user.id)
@@ -275,7 +275,7 @@ def addFriend(friend_id):
 	else:
 		return 'You cannot add youself as a friend'
 
-	return redirect(redirect(request.referrer))
+	return redirect(request.referrer)
 
 def getRecommendedFriendsId(user_id):
 	user_friends = getUserFriendIds(user_id)
@@ -348,7 +348,7 @@ def getFullName(id):
 			WHERE user_id = {}
 		'''.format(id)
 	)
-	name = cursor.fetchone()[0]
+	name = cursor.fetchone()
 	return '{} {}'.format(name[0], name[1])
 
 def insertFriends(id1, id2):
