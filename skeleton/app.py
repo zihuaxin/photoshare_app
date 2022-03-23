@@ -227,6 +227,81 @@ def login():
 	return "<a href='/login'>Try again</a>\
 			</br><a href='/register'>or make an account</a>"
 
+@app.route('/friends', methods=['GET','POST'])
+def friends():
+	if flask_login.current_user.is_authenticated:
+		user_id = getUserIdFromEmail(flask_login.current_user.id)
+	else:
+		return 'You must be logged in to view this page'
+
+	# adding a friend
+	if flask.request.method == 'POST':
+		friend_id = int(flask.request.form['id'])
+		if friend_id == user_id:
+			return 'You cannot add youself as a friend'
+
+		user_ids = getAllUserIds()
+
+		if friend_id in user_ids:
+			# check if integrity error occurs for SQL
+			if insertFriends(user_id, friend_id):
+				return 'You are already friends with this user'
+		else:
+			return 'No users found with the ID entered'
+	
+	friend_names = getUserFriendNames(user_id)
+
+	return render_template('friends.html', friend_names=friend_names)
+
+def getAllUserIds():
+	cursor = conn.cursor()
+	cursor.execute(
+		'''
+			SELECT user_id
+			FROM Users
+		'''
+	)
+
+	return [row[0] for row in cursor.fetchall()]
+
+def getUserFriendNames(id):
+	cursor = conn.cursor()
+	cursor.execute(
+		'''
+			SELECT U.first_name, U.last_name
+			FROM Friends F, Users U
+			WHERE user_id1 = {} AND U.user_id = F.user_id2
+		'''.format(id)
+	)
+
+	return ['{} {}'.format(row[0], row[1]) for row in cursor.fetchall()]
+
+def insertFriends(id1, id2):
+	# bidirectional
+	try:
+		cursor = conn.cursor()
+		cursor.execute(
+			'''
+				INSERT INTO
+				Friends(user_id1, user_id2)
+				VALUES ({}, {})
+			'''.format(id1, id2)
+		)
+		conn.commit()
+
+		cursor = conn.cursor()
+		cursor.execute(
+			'''
+				INSERT INTO
+				Friends(user_id1, user_id2)
+				VALUES ({}, {})
+			'''.format(id2, id1)
+		)
+		conn.commit()
+	except Exception as e:
+		print(type(e))
+		return True
+
 
 def getUserId():
 	if flask_login.current_user.is_authenticated:
