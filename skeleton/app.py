@@ -19,13 +19,15 @@ import itertools
 #for image uploading
 import os, base64
 
+import numpy as np
+
 mysql = MySQL()
 app = Flask(__name__)
 app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'sr24mesjw!'
+app.config['MYSQL_DATABASE_PASSWORD'] = '*PASSWORD*'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -251,8 +253,57 @@ def friends():
 			return 'No users found with the ID entered'
 	
 	friend_names = getUserFriendNames(user_id)
+	recommended_friends_ids = getRecommendedFriendsId(user_id)
+	recommended_friends_names = [getFullName(rec_id) for rec_id in recommended_friends_ids]
 
-	return render_template('friends.html', friend_names=friend_names)
+	return render_template(
+		'friends.html', 
+		friend_names=friend_names, 
+		recommended_friends_ids=recommended_friends_ids,
+		recommended_friends_names=recommended_friends_names,
+		len_rec = len(recommended_friends_ids)
+	)
+
+@app.route('/addFriend/<int:friend_id>', methods=['POST'])
+def addFriend(friend_id):
+	if flask_login.current_user.is_authenticated:
+		user_id = getUserIdFromEmail(flask_login.current_user.id)
+	else:
+		return 'You must log in before you add a friend'
+	
+	if friend_id != user_id:
+		insertFriends(user_id, friend_id)
+	else:
+		return 'You cannot add youself as a friend'
+
+	return redirect(request.referrer)
+
+def getRecommendedFriendsId(user_id):
+	user_friends = getUserFriendIds(user_id)
+	
+	user_friends_friends = []
+	for user_friend in user_friends:
+		user_friends_friends += [friend_id for friend_id in getUserFriendIds(user_friend) if friend_id != user_id]
+	
+	# ensure no duplicate entries
+	user_friends_friends = list(set(user_friends_friends))
+
+	n_common_friends = []
+	recommendation_list = []
+	for user_friends_friend in user_friends_friends:
+		if user_friends_friend not in user_friends and user_friends_friend != user_id:
+			user_friends_friends_friends = getUserFriendIds(user_friends_friend)
+
+			# number of common friends are the size of intersection between friends of X and Y
+			n_common_friends.append(len(set(user_friends_friends_friends) & set(user_friends)))
+			recommendation_list.append(user_friends_friend)
+
+	n_common_friends = np.asarray(n_common_friends)
+	ind = np.argsort(n_common_friends)[::-1] # descending order
+	recommendation_list = np.asarray(list(recommendation_list))
+
+	return list(recommendation_list[ind])
+
 
 def getAllUserIds():
 	cursor = conn.cursor()
@@ -271,11 +322,35 @@ def getUserFriendNames(id):
 		'''
 			SELECT U.first_name, U.last_name
 			FROM Friends F, Users U
-			WHERE user_id1 = {} AND U.user_id = F.user_id2
+			WHERE F.user_id1 = {} AND U.user_id = F.user_id2
 		'''.format(id)
 	)
 
 	return ['{} {}'.format(row[0], row[1]) for row in cursor.fetchall()]
+
+def getUserFriendIds(id):
+	cursor = conn.cursor()
+	cursor.execute(
+		'''
+			SELECT user_id2
+			FROM Friends
+			WHERE user_id1 = {}
+		'''.format(id)
+	)
+
+	return [int(row[0]) for row in cursor.fetchall()]
+
+def getFullName(id):
+	cursor = conn.cursor()
+	cursor.execute(
+		'''
+			SELECT first_name, last_name
+			FROM Users
+			WHERE user_id = {}
+		'''.format(id)
+	)
+	name = cursor.fetchone()
+	return '{} {}'.format(name[0], name[1])
 
 def insertFriends(id1, id2):
 	# bidirectional
@@ -814,7 +889,6 @@ def searchfunction():
 			albums = getAllAlbums()
 			return render_template('hello.html', albums= albums,  user_id=user_id, leaders = leaders ,leaders_scores = leaders_scores,
 		len_leaders = len(leaders) )
-
 
 	else:
 		photos = getAllPhotos()
