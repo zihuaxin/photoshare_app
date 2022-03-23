@@ -15,6 +15,20 @@
     {% endfor %}
 </table>
 
+<h3> Recommended Friends </h3>
+<table style="border: 1px solid #aaa;">
+    <tr>
+        <th style="border: 1px solid #aaa;"> Name </th>
+        <th style="border: 1px solid #aaa;">  </th>
+    </tr>
+    {% for i in range(len_rec) %}
+    <tr> 
+        <td> {{ recommended_friends_names[i] }} </td> 
+        <td> <button onclick="url_for('addFriend', friend_id=recommended_friends_ids[i])"> Add Friend </button> </td> 
+    </tr>
+    {% endfor %}
+</table>
+
 {% extends 'pagemenu.html' %}
 {% block content %}
 {%endblock %}
