@@ -128,40 +128,22 @@ VALUES (1, "Test_Album", CURRENT_DATE(), 1);
 INSERT INTO Albums(albums_id, name, date, user_id)
 VALUES (2, "Test_Album", CURRENT_DATE(), 2);
 
-INSERT INTO Photos(photo_id, caption, data, user_id, albums_id)
-VALUES (1, "rick roll", NULL, 1, 1);
-
-INSERT INTO Photos(photo_id, caption, data, user_id, albums_id)
-VALUES (2, "tree", NULL, 2, 2);
-
-INSERT INTO Comments(comment_id, user_id, photo_id, text, date)
-VALUES (1, 2, 1, "legendary", CURRENT_DATE());
-
-INSERT INTO Comments(comment_id, user_id, photo_id, text, date)
-VALUES (2, 3, 1, "yo", CURRENT_DATE());
-
-INSERT INTO Tags(tag_id, name)
-VALUES (1, "rick_astley");
-
-INSERT INTO Tagged(tag_id, photo_id)
-VALUES (1, 1);
-
-INSERT Likes(user_id, photo_id)
+INSERT Friends(user_id1, user_id2)
 VALUES (1, 2);
 
-INSERT Likes(user_id, photo_id)
+INSERT Friends(user_id1, user_id2)
 VALUES (2, 1);
 
-INSERT Likes(user_id, photo_id)
+INSERT Friends(user_id1, user_id2)
 VALUES (1, 3);
 
-INSERT Likes(user_id, photo_id)
+INSERT Friends(user_id1, user_id2)
 VALUES (3, 1);
 
-INSERT Likes(user_id, photo_id)
+INSERT Friends(user_id1, user_id2)
 VALUES (5, 2);
 
-INSERT Likes(user_id, photo_id)
+INSERT Friends(user_id1, user_id2)
 VALUES (2, 5);
 
 SELECT *
