@@ -2,8 +2,9 @@
 
 <h1>Your Recomend Photos</h1>
 
+{% if photos%}
 <ul>
-    {%for photo in Photos %}
+    {%for photo in photos %}
         <li>{{photo[1]}}<br>
             <img src='data:image/jpg;base64, {{ base64.b64encode(photo[2]).decode("ascii") }}' width="500" height="500"></li>
 
@@ -13,7 +14,7 @@
 
     {%endfor%}
  </ul>
-
+{%endif%}
 
  {% extends 'pagemenu.html' %} 
 {% block content %}

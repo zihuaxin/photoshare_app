@@ -14,6 +14,7 @@ from flask import Flask, Response, request, render_template, redirect, url_for, 
 from flaskext.mysql import MySQL
 import flask_login
 import datetime as date;
+import itertools
 
 #for image uploading
 import os, base64
@@ -377,6 +378,7 @@ def getYOURPhotosbyComments(comment):
 	return cursor.fetchall()
 
 def getPhotosbyTags(tags):
+	
 	tag = tags.split()
 	arr = []
 	print("checkpoint1")
@@ -515,7 +517,6 @@ def getLeaderboard():
 		GROUP BY user_id
 		''')
 	comments = cursor.fetchall()
-
 	score_dict = {}
 	name_dict = {}
 	for i, user_id in enumerate(user_ids):
@@ -587,7 +588,31 @@ def getTopTags():
 	else:
 		return arr[-3:]
 	
+def getUsersTags():
+	user_id = getUserIdFromEmail(flask_login.current_user.id)
+	cursor = conn.cursor()
+	cursor.execute('''SELECT Tagged.tag_id, Tags.name 
+					FROM Tagged, Photos , Tags 
+					WHERE Photos.user_id = %s AND Photos.photo_id = Tagged.photo_id AND Tags.tag_id = Tagged.tag_id''',(user_id))
+	return cursor.fetchall()
 
+def getTaggedPhotos():
+	tags = getUsersTags()
+	arr = []
+	for x in range(0, len(tags)+1):
+		for subset in itertools.combinations(tags,x):
+			if subset != ():
+				tagList = ""
+				for x in subset:
+					tagList = tagList + x[1] + " "
+				print(tagList , 1)
+				for x in getPhotosbyTags(tagList):	
+					arr.append(x)
+	
+	arr.reverse()
+
+
+	return arr
 
 def isAlbumReal(name):
 	cursor = conn.cursor()
@@ -633,6 +658,11 @@ def getUsersPhotos(uid):
 def topTags():
 
 	return render_template('topTags.html', tags = getTopTags())
+
+@app.route('/recommendedPhotos', methods=['GET', 'POST'])
+def recommendedPhotos():
+	photos = getTaggedPhotos()
+	return render_template('recommendedPhotos.html', photos = photos , base64=base64)
 
 @app.route('/photosByTags', methods=['POST'])
 def photosByTags():
@@ -784,15 +814,7 @@ def searchfunction():
 			albums = getAllAlbums()
 			return render_template('hello.html', albums= albums,  user_id=user_id, leaders = leaders ,leaders_scores = leaders_scores,
 		len_leaders = len(leaders) )
-	# if request.form['action'] == "Add_friend":
-	# 		friend = request.form['friend_id']
-	# 		if checkifFriend(friend):
-	# 			return render_template('hello.html', photos=photos , base64=base64,  user_id=user_id , error = "User is already your Friend", leaders = leaders ,leaders_scores = leaders_scores,
-	# 	len_leaders = len(leaders))
-	# 		else:
-	# 			addFriend(friend)
-	# 			return render_template('hello.html', photos=photos , base64=base64,  user_id=user_id, leaders = leaders ,leaders_scores = leaders_scores,
-	# 	len_leaders = len(leaders))
+
 
 	else:
 		photos = getAllPhotos()
@@ -804,7 +826,7 @@ def searchfunction():
 def hello():
 	user_id = getUserId()
 	leaders, leaders_scores = getLeaderboard()
-	getTopTags()
+	getUsersTags()
 	return render_template(
 		'hello.html', 
 		message='Welecome to Photoshare' ,

@@ -25,13 +25,16 @@
   <input type="submit" name="allOrMine" value="Show all albums"/>
 </form>
 
+
 <form action="/topTags">
   <input type="submit" value="See Top Tags"/>
 </form>
 
-<for action="/recomendedPhotos">
-  <input type="submit" value="Recomend Photos"/>
-</for>
+{% if user_id != -1 %}
+  <form action="/recommendedPhotos">
+    <input type="submit" value="Recommended Photos"/>
+  </form>
+{%endif%}
 
 {% if message == 'Logged out' %}
   <h4>{{message}}! </h4>
